@@ -44,14 +44,15 @@
             @php
                 // Kalkulasi total untuk rekap bulanan
                 $totalGr = 0;
+                $totalValue = 0;
                 $totalWhfg = 0;
                 $totalSoldValue = 0;
-                $totalValue = 0;
                 foreach ($data as $dailyData) {
                     $totalGr += $dailyData['gr'];
+                    $totalValue += $dailyData['Sold Value'];
                     $totalWhfg += $dailyData['whfg'];
-                    $totalSoldValue += $dailyData['Sold Value'];
-                    $totalValue += $dailyData['Total Value'];
+                    $totalSoldValue += $dailyData['Total Value'];
+
                 }
             @endphp
 
@@ -60,18 +61,19 @@
                     <p class="text-sm text-green-800 font-medium">Total Goods Receipt (PRO)</p>
                     <p class="text-2xl font-bold text-green-700 mt-1">{{ number_format($totalGr, 0, ',', '.') }}</p>
                 </div>
+                <div class="bg-green-50 p-4 rounded-xl">
+                    <p class="text-sm text-green-800 font-medium">Value Goods Receipt (PRO)</p>
+                    <p class="text-2xl font-bold text-green-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
+                </div>
                 <div class="bg-indigo-50 p-4 rounded-xl">
                     <p class="text-sm text-indigo-800 font-medium">Total Transfer to WHFG</p>
                     <p class="text-2xl font-bold text-indigo-700 mt-1">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
                 </div>
                 <div class="bg-blue-50 p-4 rounded-xl">
-                    <p class="text-sm text-blue-800 font-medium">Total Transfer Value</p>
+                    <p class="text-sm text-blue-800 font-medium">Value Transfer</p>
                     <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totalValue, 0, ',', '.') }}</p>
                 </div>
-                <div class="bg-amber-50 p-4 rounded-xl">
-                    <p class="text-sm text-amber-800 font-medium">Total Sold Value</p>
-                    <p class="text-2xl font-bold text-amber-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
-                </div>
+
             </div>
             <div class="mt-auto pt-6">
                  <a href="{{ route('calendar.export', ['year' => $year, 'month' => $month]) }}"
@@ -130,7 +132,7 @@
                                     $isToday = $day->isToday();
                                 @endphp
                                 <div class="relative bg-white p-2 flex flex-col overflow-hidden
-                                            {{ $hasData ? 'cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
+                                            {{ $hasData ? 'cursor-pointer transition-transform duration-10 hover:scale-110 hover:shadow-lg hover:z-10 data-day' : '' }}"
                                      @if($hasData)
                                          data-date='{{ $day->isoFormat('dddd, D MMMM YYYY') }}'
                                          data-details='{{ json_encode($data[$dateKey]) }}'
@@ -209,17 +211,18 @@
                             <p class="text-2xl font-bold text-green-700">${formatNumber(details.gr)}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-gray-500 font-medium">Total Sold Value</p>
+                            <p class="text-2xl font-bold text-green-700">$ ${formatNumber(details['Total Value'])}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Transfer to WHFG</p>
                             <p class="text-2xl font-bold text-indigo-700">${formatNumber(details.whfg)}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Total Transfer Value</p>
-                            <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Total Value'])}</p>
+                            <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Sold Value'])}</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-gray-500 font-medium">Total Sold Value</p>
-                            <p class="text-2xl font-bold text-rose-700">$ ${formatNumber(details['Sold Value'])}</p>
-                        </div>
+
 
                     </div>
                 `;
