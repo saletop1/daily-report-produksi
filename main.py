@@ -39,7 +39,7 @@ def get_yppr009_data():
         conn_sap = connect_sap()
 
         werks = '3000'
-        budat = '20250802'
+        budat = request.args.get('budat','')  # bisa None
         t_dispo = [{'DISPO': dispo} for dispo in ['D24', 'G32']]
 
         result = conn_sap.call('Z_FM_YPPR009',

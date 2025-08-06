@@ -1,25 +1,40 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\DashboardController;
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Di sini Anda dapat mendaftarkan rute web untuk aplikasi Anda.
+|
+*/
+
+// Rute default akan mengarahkan ke halaman login jika belum masuk,
+// atau ke dasbor jika sudah masuk.
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// Grup rute yang memerlukan autentikasi (harus login)
+Route::middleware(['auth'])->group(function () {
+    // Rute untuk dasbor utama
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// Ini satu-satunya route untuk calendar
-// Route::get('/calendar/{year?}/{month?}', [CalendarController::class, 'index'])->name('calendar');
-// Route::get('/calendar/export/pdf/{year}/{month}', [CalendarController::class, 'exportPdf'])->name('calendar.exportPdf');
+    // Rute untuk kalender
+    Route::get('/calendar/{year?}/{month?}', [CalendarController::class, 'index'])
+        ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])
+        ->name('calendar.index');
 
-// Route untuk menampilkan kalender
-Route::get('/calendar/{year?}/{month?}', [CalendarController::class, 'index'])
-    ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])
-    ->name('calendar.index');
+    // Rute untuk export PDF
+    Route::get('/calendar/export/{year}/{month}', [CalendarController::class, 'exportPdf'])
+        ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])
+        ->name('calendar.export');
+});
 
-// Route untuk export PDF
-Route::get('/calendar/export/{year}/{month}', [CalendarController::class, 'exportPdf'])
-    ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])
-    ->name('calendar.export');
+
+// Rute autentikasi yang dibuat oleh Laravel Breeze
+require __DIR__.'/auth.php';

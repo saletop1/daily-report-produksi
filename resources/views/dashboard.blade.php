@@ -1,49 +1,101 @@
-@extends('layouts.app') {{-- atau sesuaikan layout kamu --}}
+<x-app-layout>
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Header Halaman -->
+            <header class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    Dasbor Analisis Produksi
+                </h1>
+                <p class="text-gray-600 mt-1">Ringkasan data produksi untuk bulan ini.</p>
+            </header>
 
-@section('content')
-<div class="flex min-h-screen bg-gray-100">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-md p-4">
-        <div class="text-xl font-semibold mb-6">
-            Dashboard
-        </div>
-        <ul class="space-y-2">
-            <li><a href="#" class="block p-2 hover:bg-blue-100 rounded">Overview</a></li>
-            <li><a href="#" class="block p-2 hover:bg-blue-100 rounded">Transfer WHFG</a></li>
-            <li><a href="#" class="block p-2 hover:bg-blue-100 rounded">Total QTY</a></li>
-            <li><a href="#" class="block p-2 hover:bg-blue-100 rounded">Total GR</a></li>
-        </ul>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 p-6">
-        <div class="bg-white rounded shadow p-6">
-            <div class="text-lg font-bold mb-4 text-center">{{ $date }}</div>
-
-            <div class="grid grid-cols-3 gap-4 text-center">
-                <div>
-                    <div class="text-sm font-semibold text-gray-600">GR</div>
-                    <div class="text-2xl font-bold text-blue-600">{{ $gr }}</div>
+            <!-- Grid Kartu KPI -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Kartu Total GR -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-medium text-gray-500">Total Goods Receipt (GR)</h3>
+                    <p class="mt-2 text-3xl font-bold text-green-600">{{ number_format($totalGr, 0, ',', '.') }}</p>
                 </div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-600">TRANSFER WHFG</div>
-                    <div class="text-2xl font-bold text-gray-800">{{ $transfer_whfg }}</div>
+                <!-- Kartu Total WHFG -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-medium text-gray-500">Total Transfer ke WHFG</h3>
+                    <p class="mt-2 text-3xl font-bold text-indigo-600">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
                 </div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-600">TOTAL GR QTY PRO</div>
-                    <div class="text-2xl font-bold text-green-600">{{ $total_gr_qty_pro }}</div>
+                <!-- Kartu Total Transfer Value -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-medium text-gray-500">Total Transfer Value</h3>
+                    <p class="mt-2 text-3xl font-bold text-blue-600">$ {{ number_format($totalTransferValue, 0, ',', '.') }}</p>
+                </div>
+                 <!-- Kartu Total Transaksi -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-medium text-gray-500">Total Hari Produksi</h3>
+                    <p class="mt-2 text-3xl font-bold text-gray-800">{{ $totalSoldCount }}</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 text-center mt-6">
-                <div></div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-600">TOTAL QTY PRO</div>
-                    <div class="text-2xl font-bold text-purple-600">{{ $total_qty_pro }}</div>
-                </div>
-                <div></div>
+            <!-- Grafik Analisis -->
+            <div class="mt-8 bg-white p-6 rounded-2xl shadow-sm">
+                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik Produksi Harian</h3>
+                 <canvas id="productionChart" height="100"></canvas>
             </div>
         </div>
-    </main>
-</div>
-@endsection
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('productionChart').getContext('2d');
+
+    // Ambil data dari variabel Blade yang di-encode sebagai JSON
+    const chartLabels = {!! $chartLabels !!};
+    const chartGrData = {!! $chartGrData !!};
+    const chartWhfgData = {!! $chartWhfgData !!};
+
+    const productionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [
+                {
+                    label: 'Goods Receipt (GR)',
+                    data: chartGrData,
+                    borderColor: 'rgba(22, 163, 74, 1)',
+                    backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Transfer ke WHFG',
+                    data: chartWhfgData,
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                },
+                x: {
+                   grid: {
+                        display: false
+                   }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+});
+</script>
+</x-app-layout>

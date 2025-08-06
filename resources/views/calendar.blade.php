@@ -1,58 +1,29 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalender Laporan Produksi</title>
+<x-app-layout>
+    {{--
+        Catatan:
+        File ini sekarang menggunakan komponen layout utama <x-app-layout>.
+        Semua elemen <head>, <body>, dan tag <script> yang tidak perlu telah dihapus
+        karena sudah ditangani oleh file layout.
+    --}}
 
-    <!-- Memuat Tailwind CSS dari CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Memuat Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        /* Menggunakan font Inter sebagai default */
-        body {
-            font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Mencegah scroll pada body */
-        }
-        /* Style untuk scrollbar yang lebih modern (opsional) */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #a0aec0;
-            border-radius: 20px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background-color: #edf2f7;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 text-gray-800">
-
-    <div class="flex flex-col lg:flex-row h-screen">
+    {{-- Menambahkan style khusus agar konten mengisi sisa layar di bawah navbar --}}
+    <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 4rem);">
 
         <!-- Panel Rekap Bulanan (Sisi Kanan di Desktop) -->
-        <div class="w-full lg:w-1/3 xl:w-1/4 bg-white p-6 order-1 lg:order-2 flex flex-col">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Rekap Bulan Ini</h2>
+        <div class="w-full lg:w-1/3 xl:w-1/4 bg-white p-6 order-1 lg:order-2 flex flex-col overflow-y-auto">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex-shrink-0">Rekap Bulan Ini</h2>
 
             @php
                 // Kalkulasi total untuk rekap bulanan
                 $totalGr = 0;
-                $totalValue = 0;
                 $totalWhfg = 0;
                 $totalSoldValue = 0;
+                $totalValue = 0;
                 foreach ($data as $dailyData) {
                     $totalGr += $dailyData['gr'];
-                    $totalValue += $dailyData['Sold Value'];
                     $totalWhfg += $dailyData['whfg'];
-                    $totalSoldValue += $dailyData['Total Value'];
-
+                    $totalSoldValue += $dailyData['Sold Value'];
+                    $totalValue += $dailyData['Total Value'];
                 }
             @endphp
 
@@ -61,21 +32,20 @@
                     <p class="text-sm text-green-800 font-medium">Total Goods Receipt (PRO)</p>
                     <p class="text-2xl font-bold text-green-700 mt-1">{{ number_format($totalGr, 0, ',', '.') }}</p>
                 </div>
-                <div class="bg-green-50 p-4 rounded-xl">
-                    <p class="text-sm text-green-800 font-medium">Value Goods Receipt (PRO)</p>
-                    <p class="text-2xl font-bold text-green-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
-                </div>
                 <div class="bg-indigo-50 p-4 rounded-xl">
                     <p class="text-sm text-indigo-800 font-medium">Total Transfer to WHFG</p>
                     <p class="text-2xl font-bold text-indigo-700 mt-1">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
                 </div>
                 <div class="bg-blue-50 p-4 rounded-xl">
-                    <p class="text-sm text-blue-800 font-medium">Value Transfer</p>
+                    <p class="text-sm text-blue-800 font-medium">Total Transfer Value</p>
                     <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totalValue, 0, ',', '.') }}</p>
                 </div>
-
+                <div class="bg-amber-50 p-4 rounded-xl">
+                    <p class="text-sm text-amber-800 font-medium">Total Sold Value</p>
+                    <p class="text-2xl font-bold text-amber-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
+                </div>
             </div>
-            <div class="mt-auto pt-6">
+            <div class="mt-auto pt-6 flex-shrink-0">
                  <a href="{{ route('calendar.export', ['year' => $year, 'month' => $month]) }}"
                    class="flex w-full items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium">
                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -112,17 +82,11 @@
                     </div>
                 </div>
 
-                <!--
-                    Grid Kalender
-                    [FIXED] Menggunakan grid-cols-[...] untuk membuat kolom Minggu, Senin, Selasa lebih kecil.
-                -->
-                <div class="flex-grow grid grid-cols-[0.8fr_0.8fr_0.8fr_1fr_1fr_1fr_1fr] grid-rows-6 gap-px bg-gray-200 overflow-hidden">
-                    <!-- Header Hari (Minggu, Senin, ...) -->
+                <div class="flex-grow grid grid-cols-[0.8fr_0.8fr_0.8fr_1fr_1fr_1fr_1fr] auto-rows-fr gap-px bg-gray-200">
                     @foreach (['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $dayName)
                         <div class="text-center bg-white py-3 font-semibold text-gray-600 text-sm uppercase tracking-wider flex items-center justify-center">{{ $dayName }}</div>
                     @endforeach
 
-                    <!-- Looping untuk setiap hari dalam sebulan -->
                     @foreach ($weeks as $week)
                         @foreach ($week as $day)
                             @if ($day)
@@ -132,7 +96,7 @@
                                     $isToday = $day->isToday();
                                 @endphp
                                 <div class="relative bg-white p-2 flex flex-col overflow-hidden
-                                            {{ $hasData ? 'cursor-pointer transition-transform duration-10 hover:scale-110 hover:shadow-lg hover:z-10 data-day' : '' }}"
+                                            {{ $hasData ? 'cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
                                      @if($hasData)
                                          data-date='{{ $day->isoFormat('dddd, D MMMM YYYY') }}'
                                          data-details='{{ json_encode($data[$dateKey]) }}'
@@ -186,6 +150,7 @@
         </div>
     </div>
 
+    @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const modal = document.getElementById('details-modal');
@@ -211,18 +176,17 @@
                             <p class="text-2xl font-bold text-green-700">${formatNumber(details.gr)}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-gray-500 font-medium">Total Sold Value</p>
-                            <p class="text-2xl font-bold text-green-700">$ ${formatNumber(details['Total Value'])}</p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Transfer to WHFG</p>
                             <p class="text-2xl font-bold text-indigo-700">${formatNumber(details.whfg)}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Total Transfer Value</p>
-                            <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Sold Value'])}</p>
+                            <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Total Value'])}</p>
                         </div>
-
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-gray-500 font-medium">Total Sold Value</p>
+                            <p class="text-2xl font-bold text-rose-700">$ ${formatNumber(details['Sold Value'])}</p>
+                        </div>
 
                     </div>
                 `;
@@ -247,7 +211,6 @@
                         openModal(date, details);
                     } catch (e) {
                         console.error("Gagal mem-parsing data JSON:", e, this.dataset.details);
-                        alert("Terjadi kesalahan saat membaca data detail.");
                     }
                 });
             });
@@ -261,5 +224,5 @@
             });
         });
     </script>
-</body>
-</html>
+    @endpush
+</x-app-layout>
