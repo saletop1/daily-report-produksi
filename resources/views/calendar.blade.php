@@ -62,10 +62,10 @@
         <div class="w-full lg:w-2/3 xl:w-3/4 bg-gray-100 p-4 sm:p-6 lg:p-8 order-2 lg:order-1 flex flex-col">
             {{-- [FIXED] Menghapus aspect-ratio dan max-w, lalu menambahkan h-full agar tinggi maksimal --}}
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full w-full">
-                <div class="p-6 border-b border-gray-200">
+                <div class="p-3 border-b border-gray-200">
                     <!-- Header Kalender: Navigasi dan Judul -->
                     <div class="flex flex-col sm:flex-row items-center justify-between">
-                        <h1 class="text-2xl font-bold text-gray-900">
+                        <h1 class="text-2xl ms-4 font-bold text-gray-900">
                             {{ \Carbon\Carbon::create($year, $month)->isoFormat('MMMM YYYY') }}
                         </h1>
                         <div class="flex items-center space-x-2 mt-4 sm:mt-0">
@@ -85,9 +85,14 @@
                     </div>
                 </div>
 
-                <div class="flex-grow grid grid-cols-7 auto-rows-fr gap-px bg-gray-200 overflow-y-auto custom-scrollbar">
+                <div class="flex-grow grid grid-cols-7 gap-px bg-gray-200 overflow-y-auto custom-scrollbar"
+                style="grid-template-rows: 32px repeat({{ count($weeks) }}, 1fr);">
                     @foreach (['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $dayName)
-                        <div class="text-center bg-white py-3 font-semibold {{ $dayName == 'Min' ? 'text-red-600' : 'text-gray-600' }} text-sm uppercase tracking-wider flex items-center justify-center">{{ $dayName }}</div>
+                        <div class="text-center bg-white h-8 text-xs font-semibold
+                                    {{ $dayName == 'Min' ? 'text-red-600' : 'text-gray-600' }}
+                                    uppercase tracking-wider flex items-center justify-center">
+                            {{ $dayName }}
+                        </div>
                     @endforeach
 
                     @foreach ($weeks as $week)
