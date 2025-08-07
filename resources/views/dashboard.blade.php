@@ -30,20 +30,21 @@
                     <h3 class="text-sm font-medium text-gray-500">Total Goods Receipt (PRO)</h3>
                     <p class="mt-2 text-3xl font-bold text-green-600">{{ number_format($totalGr, 0, ',', '.') }}</p>
                 </div>
+                                <!-- [FIXED] Kartu Total Sold Value -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm">
+                    <h3 class="text-sm font-medium text-gray-500">Total Sold Value</h3>
+                    <p class="mt-2 text-3xl font-bold text-amber-600">$ {{ number_format($totalTransferValue, 0, ',', '.') }}</p>
+                </div>
                 <!-- Kartu Total WHFG -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
                     <h3 class="text-sm font-medium text-gray-500">Total Transfer to WHFG</h3>
                     <p class="mt-2 text-3xl font-bold text-indigo-600">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
                 </div>
+
                 <!-- Kartu Total Transfer Value -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
                     <h3 class="text-sm font-medium text-gray-500">Total Transfer Value</h3>
-                    <p class="mt-2 text-3xl font-bold text-blue-600">$ {{ number_format($totalTransferValue, 0, ',', '.') }}</p>
-                </div>
-                <!-- [FIXED] Kartu Total Sold Value -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Sold Value</h3>
-                    <p class="mt-2 text-3xl font-bold text-amber-600">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
+                    <p class="mt-2 text-3xl font-bold text-blue-600">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
                 </div>
             </div>
 

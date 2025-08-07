@@ -34,7 +34,7 @@
                 </div>
                 <div class="bg-green-50 p-4 rounded-xl">
                     <p class="text-sm text-gray-800 font-medium">Total Sold Value</p>
-                    <p class="text-2xl font-bold text-green-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
+                    <p class="text-2xl font-bold text-green-700 mt-1">$ {{ number_format($totalValue, 0, ',', '.') }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl">
                     <p class="text-sm text-gray-800 font-medium">Total Transfer to WHFG</p>
@@ -42,7 +42,7 @@
                 </div>
                 <div class="bg-gray-50 p-4 rounded-xl">
                     <p class="text-sm text-gray-800 font-medium">Total Transfer Value</p>
-                    <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totalValue, 0, ',', '.') }}</p>
+                    <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
                 </div>
 
             </div>
@@ -181,7 +181,7 @@
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Total Sold Value</p>
-                            <p class="text-2xl font-bold text-green-700">$ ${formatNumber(details['Sold Value'])}</p>
+                            <p class="text-2xl font-bold text-green-700">$ ${formatNumber(details['Total Value'])}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Transfer to WHFG</p>
@@ -189,7 +189,7 @@
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Total Transfer Value</p>
-                            <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Total Value'])}</p>
+                            <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Sold Value'])}</p>
                         </div>
 
 

@@ -13,7 +13,7 @@ class DashboardController extends Controller
      */
     public function index(Request $request)
     {
-        // [FIXED] Validasi dan tentukan rentang tanggal dari request
+        // Validasi dan tentukan rentang tanggal dari request
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -22,9 +22,9 @@ class DashboardController extends Controller
         $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->startOfMonth();
         $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now()->endOfMonth();
 
-        // Ambil data produksi dari database sesuai rentang
+        // [FIXED] Ambil data produksi dari database sesuai rentang, tambahkan VALUSX
         $productionData = DB::table('sap_yppr009_data')
-            ->select('BUDAT_MKPF', 'NETPR', 'MENGEX', 'MENGE', 'VALUS')
+            ->select('BUDAT_MKPF', 'NETPR', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX')
             ->whereBetween('BUDAT_MKPF', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('BUDAT_MKPF', 'asc')
             ->get();
@@ -33,7 +33,7 @@ class DashboardController extends Controller
         $totalGr = 0;
         $totalWhfg = 0;
         $totalTransferValue = 0;
-        $totalSoldValue = 0; // Tambahkan variabel untuk Sold Value
+        $totalSoldValue = 0;
 
         // Variabel untuk data grafik
         $chartLabels = [];
@@ -57,7 +57,8 @@ class DashboardController extends Controller
             $dailyData[$tanggal]['gr'] += floatval($item->MENGE ?? 0);
             $dailyData[$tanggal]['whfg'] += floatval($item->MENGEX ?? 0);
             $dailyData[$tanggal]['transfer_value'] += floatval($item->VALUS ?? 0);
-            $dailyData[$tanggal]['sold_value'] += floatval($item->NETPR ?? 0); // Ambil data NETPR
+            // [FIXED] Menggunakan VALUSX untuk sold_value
+            $dailyData[$tanggal]['sold_value'] += floatval($item->VALUSX ?? 0);
         }
 
         // Siapkan data untuk grafik dan hitung total
@@ -91,7 +92,7 @@ class DashboardController extends Controller
             'chartLabels' => json_encode($chartLabels),
             'chartGrData' => json_encode($chartGrData),
             'chartWhfgData' => json_encode($chartWhfgData),
-            'startDate' => $startDate->format('Y-m-d'), // Kirim tanggal ke view untuk ditampilkan di filter
+            'startDate' => $startDate->format('Y-m-d'),
             'endDate' => $endDate->format('Y-m-d'),
         ]);
     }
