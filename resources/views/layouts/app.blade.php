@@ -15,6 +15,7 @@
     <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://kit.fontawesome.com/be832a042f.js" crossorigin="anonymous"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -37,21 +38,23 @@
                         <!-- Link Navigasi -->
                         <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                             <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition duration-150 ease-in-out">
-                                Dasbor
+                                Dashboard
                             </a>
                             <a href="{{ route('calendar.index') }}" class="{{ request()->routeIs('calendar.index') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition duration-150 ease-in-out">
-                                Kalender
+                                Calendar
                             </a>
                         </div>
                     </div>
 
                     <!-- Pengaturan Pengguna -->
                     <div class="hidden sm:flex sm:items-center sm:ml-6">
-                        <div class="font-medium text-sm text-gray-800">{{ Auth::user()->name }}</div>
+                        <div class="font-medium text-sm text-gray-800">
+                            <i class="fa-solid fa-user me-3"></i>
+                            {{ Auth::user()->name }}</div>
                         <!-- Tombol Logout -->
                         <form method="POST" action="{{ route('logout') }}" class="ml-4">
                             @csrf
-                            <button type="submit" class="text-sm text-gray-500 hover:text-gray-700">
+                            <button type="submit" class="text-sm bg-red-500 rounded-md p-2 text-white hover:bg-white hover:border-2 hover:border-red-500 hover:text-gray-700">
                                 Logout
                             </button>
                         </form>

@@ -13,9 +13,9 @@
 
                     {{-- [FIXED] Form Filter Tanggal --}}
                     <form action="{{ route('dashboard') }}" method="GET" class="flex items-center space-x-2 mt-4 md:mt-0">
-                        <input type="date" name="start_date" value="{{ $startDate }}" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <input type="date" name="start_date" value="{{ $startDate }}" class=" rounded-md p-2 border-2 border-blue-400 shadow-sm focus:border-blue-900 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
                         <span class="text-gray-500">to</span>
-                        <input type="date" name="end_date" value="{{ $endDate }}" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <input type="date" name="end_date" value="{{ $endDate }}" class="rounded-md p-2 border-2 border-blue-400 shadow-sm focus:border-blue-900 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                             Filter
                         </button>
