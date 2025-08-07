@@ -54,12 +54,12 @@ def get_sync_date_range():
     - Start: Awal tahun (1 Januari)
     - End: H-1 (kemarin)
     """
-    # today = datetime.now()
-    # yesterday = today - timedelta(days=1)
-    # start_of_year = today.replace(month=1, day=1)
+    today = datetime.now()
+    yesterday = today - timedelta(days=1)
+    start_of_year = today.replace(month=8, day=1)
 
-    start_date_str = '20250801'
-    end_date_str = '20250806'
+    start_date_str = start_date_str.strftime('%Y%m%d')
+    end_date_str = yesterday.strftime('%Y%m%d')
 
     return start_date_str, end_date_str
 
