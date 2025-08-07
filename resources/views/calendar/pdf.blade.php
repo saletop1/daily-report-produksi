@@ -143,7 +143,7 @@
         </div>
         <div class="legend-column">
             <ul>
-                <li><strong>Total Value</strong>: Value Total Hasil Konfirmasi</li>
+                <li><strong>Total Value</strong>: Total Value Hasil Konfirmasi</li>
                 {{-- <li><strong>Total Qty PRO</strong>: Akumulatif Total Hasil Produksi</li> --}}
             </ul>
         </div>

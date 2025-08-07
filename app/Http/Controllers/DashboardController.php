@@ -11,13 +11,18 @@ class DashboardController extends Controller
     /**
      * Menampilkan halaman dasbor dengan analisis data.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Tentukan rentang tanggal (misalnya, bulan ini)
-        $startDate = Carbon::now()->startOfMonth();
-        $endDate = Carbon::now()->endOfMonth();
+        // [FIXED] Validasi dan tentukan rentang tanggal dari request
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
 
-        // Ambil data produksi dari database
+        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->startOfMonth();
+        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now()->endOfMonth();
+
+        // Ambil data produksi dari database sesuai rentang
         $productionData = DB::table('sap_yppr009_data')
             ->select('BUDAT_MKPF', 'NETPR', 'MENGEX', 'MENGE', 'VALUS')
             ->whereBetween('BUDAT_MKPF', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
@@ -28,7 +33,7 @@ class DashboardController extends Controller
         $totalGr = 0;
         $totalWhfg = 0;
         $totalTransferValue = 0;
-        $totalSoldCount = $productionData->count();
+        $totalSoldValue = 0; // Tambahkan variabel untuk Sold Value
 
         // Variabel untuk data grafik
         $chartLabels = [];
@@ -44,28 +49,30 @@ class DashboardController extends Controller
                 $dailyData[$tanggal] = [
                     'gr' => 0,
                     'whfg' => 0,
-                    'transfer_value' => 0
+                    'transfer_value' => 0,
+                    'sold_value' => 0,
                 ];
             }
 
             $dailyData[$tanggal]['gr'] += floatval($item->MENGE ?? 0);
             $dailyData[$tanggal]['whfg'] += floatval($item->MENGEX ?? 0);
             $dailyData[$tanggal]['transfer_value'] += floatval($item->VALUS ?? 0);
+            $dailyData[$tanggal]['sold_value'] += floatval($item->NETPR ?? 0); // Ambil data NETPR
         }
 
         // Siapkan data untuk grafik dan hitung total
-        $currentDate = $startDate->copy();
-        while($currentDate->lte($endDate)) {
-            $dateKey = $currentDate->format('Y-m-d');
-            $day = $currentDate->format('d');
+        $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->copy()->addDay());
+        foreach ($period as $date) {
+            $dateKey = $date->format('Y-m-d');
+            $dayLabel = $date->format('d M');
 
-            // Tambahkan label tanggal untuk grafik
-            array_push($chartLabels, $day);
+            array_push($chartLabels, $dayLabel);
 
             if(isset($dailyData[$dateKey])) {
                 $totalGr += $dailyData[$dateKey]['gr'];
                 $totalWhfg += $dailyData[$dateKey]['whfg'];
                 $totalTransferValue += $dailyData[$dateKey]['transfer_value'];
+                $totalSoldValue += $dailyData[$dateKey]['sold_value'];
 
                 array_push($chartGrData, $dailyData[$dateKey]['gr']);
                 array_push($chartWhfgData, $dailyData[$dateKey]['whfg']);
@@ -73,8 +80,6 @@ class DashboardController extends Controller
                 array_push($chartGrData, 0);
                 array_push($chartWhfgData, 0);
             }
-
-            $currentDate->addDay();
         }
 
         // Kirim data yang sudah dianalisis ke view
@@ -82,10 +87,12 @@ class DashboardController extends Controller
             'totalGr' => $totalGr,
             'totalWhfg' => $totalWhfg,
             'totalTransferValue' => $totalTransferValue,
-            'totalSoldCount' => $totalSoldCount,
+            'totalSoldValue' => $totalSoldValue,
             'chartLabels' => json_encode($chartLabels),
             'chartGrData' => json_encode($chartGrData),
             'chartWhfgData' => json_encode($chartWhfgData),
+            'startDate' => $startDate->format('Y-m-d'), // Kirim tanggal ke view untuk ditampilkan di filter
+            'endDate' => $endDate->format('Y-m-d'),
         ]);
     }
 }

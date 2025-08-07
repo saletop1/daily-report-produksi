@@ -1,24 +1,38 @@
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Header Halaman -->
+            <!-- Header Halaman dan Filter Tanggal -->
             <header class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">
-                    Dasbor Analisis Produksi
-                </h1>
-                <p class="text-gray-600 mt-1">Ringkasan data produksi untuk bulan ini.</p>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">
+                            Dashboard Analisis Produksi
+                        </h1>
+                        <p class="text-gray-600 mt-1">Ringkasan data produksi untuk periode yang dipilih.</p>
+                    </div>
+
+                    {{-- [FIXED] Form Filter Tanggal --}}
+                    <form action="{{ route('dashboard') }}" method="GET" class="flex items-center space-x-2 mt-4 md:mt-0">
+                        <input type="date" name="start_date" value="{{ $startDate }}" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <span class="text-gray-500">to</span>
+                        <input type="date" name="end_date" value="{{ $endDate }}" class="border-gray-300 rounded-lg shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            Filter
+                        </button>
+                    </form>
+                </div>
             </header>
 
             <!-- Grid Kartu KPI -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Kartu Total GR -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Goods Receipt (GR)</h3>
+                    <h3 class="text-sm font-medium text-gray-500">Total Goods Receipt (PRO)</h3>
                     <p class="mt-2 text-3xl font-bold text-green-600">{{ number_format($totalGr, 0, ',', '.') }}</p>
                 </div>
                 <!-- Kartu Total WHFG -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Transfer ke WHFG</h3>
+                    <h3 class="text-sm font-medium text-gray-500">Total Transfer to WHFG</h3>
                     <p class="mt-2 text-3xl font-bold text-indigo-600">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
                 </div>
                 <!-- Kartu Total Transfer Value -->
@@ -26,10 +40,10 @@
                     <h3 class="text-sm font-medium text-gray-500">Total Transfer Value</h3>
                     <p class="mt-2 text-3xl font-bold text-blue-600">$ {{ number_format($totalTransferValue, 0, ',', '.') }}</p>
                 </div>
-                 <!-- Kartu Total Transaksi -->
+                <!-- [FIXED] Kartu Total Sold Value -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Hari Produksi</h3>
-                    <p class="mt-2 text-3xl font-bold text-gray-800">{{ $totalSoldCount }}</p>
+                    <h3 class="text-sm font-medium text-gray-500">Total Sold Value</h3>
+                    <p class="mt-2 text-3xl font-bold text-amber-600">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
                 </div>
             </div>
 
@@ -41,6 +55,7 @@
         </div>
     </div>
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('productionChart').getContext('2d');
@@ -56,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: chartLabels,
             datasets: [
                 {
-                    label: 'Goods Receipt (GR)',
+                    label: 'Goods Receipt (PRO)',
                     data: chartGrData,
                     borderColor: 'rgba(22, 163, 74, 1)',
                     backgroundColor: 'rgba(22, 163, 74, 0.2)',
@@ -64,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tension: 0.3
                 },
                 {
-                    label: 'Transfer ke WHFG',
+                    label: 'Transfer to WHFG',
                     data: chartWhfgData,
                     borderColor: 'rgba(79, 70, 229, 1)',
                     backgroundColor: 'rgba(79, 70, 229, 0.2)',
@@ -98,4 +113,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+@endpush
 </x-app-layout>

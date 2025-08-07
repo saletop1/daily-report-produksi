@@ -29,21 +29,22 @@
 
             <div class="space-y-4">
                 <div class="bg-green-50 p-4 rounded-xl">
-                    <p class="text-sm text-green-800 font-medium">Total Goods Receipt (PRO)</p>
+                    <p class="text-sm text-gray-800 font-medium">Total Goods Receipt (PRO)</p>
                     <p class="text-2xl font-bold text-green-700 mt-1">{{ number_format($totalGr, 0, ',', '.') }}</p>
                 </div>
-                <div class="bg-indigo-50 p-4 rounded-xl">
-                    <p class="text-sm text-indigo-800 font-medium">Total Transfer to WHFG</p>
-                    <p class="text-2xl font-bold text-indigo-700 mt-1">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
+                <div class="bg-green-50 p-4 rounded-xl">
+                    <p class="text-sm text-gray-800 font-medium">Total Sold Value</p>
+                    <p class="text-2xl font-bold text-green-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
                 </div>
-                <div class="bg-blue-50 p-4 rounded-xl">
-                    <p class="text-sm text-blue-800 font-medium">Total Transfer Value</p>
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-sm text-gray-800 font-medium">Total Transfer to WHFG</p>
+                    <p class="text-2xl font-bold text-blue-700 mt-1">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl">
+                    <p class="text-sm text-gray-800 font-medium">Total Transfer Value</p>
                     <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totalValue, 0, ',', '.') }}</p>
                 </div>
-                <div class="bg-amber-50 p-4 rounded-xl">
-                    <p class="text-sm text-amber-800 font-medium">Total Sold Value</p>
-                    <p class="text-2xl font-bold text-amber-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
-                </div>
+
             </div>
             <div class="mt-auto pt-6 flex-shrink-0">
                  <a href="{{ route('calendar.export', ['year' => $year, 'month' => $month]) }}"
@@ -57,8 +58,10 @@
         </div>
 
         <!-- Panel Kalender (Sisi Kiri di Desktop) -->
+        {{-- [FIXED] Menghapus items-center dan justify-center agar kalender mengisi ruang vertikal --}}
         <div class="w-full lg:w-2/3 xl:w-3/4 bg-gray-100 p-4 sm:p-6 lg:p-8 order-2 lg:order-1 flex flex-col">
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full">
+            {{-- [FIXED] Menghapus aspect-ratio dan max-w, lalu menambahkan h-full agar tinggi maksimal --}}
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full w-full">
                 <div class="p-6 border-b border-gray-200">
                     <!-- Header Kalender: Navigasi dan Judul -->
                     <div class="flex flex-col sm:flex-row items-center justify-between">
@@ -82,9 +85,9 @@
                     </div>
                 </div>
 
-                <div class="flex-grow grid grid-cols-[0.8fr_0.8fr_0.8fr_1fr_1fr_1fr_1fr] auto-rows-fr gap-px bg-gray-200">
+                <div class="flex-grow grid grid-cols-7 auto-rows-fr gap-px bg-gray-200 overflow-y-auto custom-scrollbar">
                     @foreach (['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $dayName)
-                        <div class="text-center bg-white py-3 font-semibold text-gray-600 text-sm uppercase tracking-wider flex items-center justify-center">{{ $dayName }}</div>
+                        <div class="text-center bg-white py-3 font-semibold {{ $dayName == 'Min' ? 'text-red-600' : 'text-gray-600' }} text-sm uppercase tracking-wider flex items-center justify-center">{{ $dayName }}</div>
                     @endforeach
 
                     @foreach ($weeks as $week)
@@ -94,6 +97,7 @@
                                     $dateKey = $day->format('Y-m-d');
                                     $hasData = isset($data[$dateKey]);
                                     $isToday = $day->isToday();
+                                    $isSunday = $day->isSunday();
                                 @endphp
                                 <div class="relative bg-white p-2 flex flex-col overflow-hidden
                                             {{ $hasData ? 'cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
@@ -102,7 +106,7 @@
                                          data-details='{{ json_encode($data[$dateKey]) }}'
                                      @endif
                                 >
-                                    <span class="font-medium text-sm {{ $isToday ? 'bg-blue-600 text-white rounded-full flex items-center justify-center h-7 w-7' : 'text-gray-800' }}">
+                                    <span class="font-medium text-sm {{ $isToday ? 'bg-blue-600 text-white rounded-full flex items-center justify-center h-7 w-7' : ($isSunday ? 'text-red-600' : 'text-gray-800') }}">
                                         {{ $day->day }}
                                     </span>
 
@@ -114,7 +118,7 @@
                                                     <span class="truncate">GR :<strong class="ml-1">{{ number_format($data[$dateKey]['gr'], 0, ',', '.') }}</strong></span>
                                                 </li>
                                                 <li class="flex items-center text-violet-600">
-                                                    <span class="w-2 h-2 bg-violet-500 rounded-full mr-2 flex-shrink-0"></span>
+                                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></span>
                                                     <span class="truncate">Value :<strong class="ml-1">$ {{ number_format($data[$dateKey]['Total Value'], 0, ',', '.') }}</strong></span>
                                                 </li>
                                             </ul>
@@ -176,17 +180,18 @@
                             <p class="text-2xl font-bold text-green-700">${formatNumber(details.gr)}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-gray-500 font-medium">Total Sold Value</p>
+                            <p class="text-2xl font-bold text-green-700">$ ${formatNumber(details['Sold Value'])}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Transfer to WHFG</p>
-                            <p class="text-2xl font-bold text-indigo-700">${formatNumber(details.whfg)}</p>
+                            <p class="text-2xl font-bold text-blue-700">${formatNumber(details.whfg)}</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <p class="text-gray-500 font-medium">Total Transfer Value</p>
                             <p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Total Value'])}</p>
                         </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p class="text-gray-500 font-medium">Total Sold Value</p>
-                            <p class="text-2xl font-bold text-rose-700">$ ${formatNumber(details['Sold Value'])}</p>
-                        </div>
+
 
                     </div>
                 `;
