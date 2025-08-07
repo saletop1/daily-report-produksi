@@ -54,13 +54,13 @@ def get_sync_date_range():
     - Start: Awal tahun (1 Januari)
     - End: H-1 (kemarin)
     """
-    today = datetime.now()
-    yesterday = today - timedelta(days=1)
-    start_of_year = today.replace(month=1, day=1)
-    
-    start_date_str = start_of_year.strftime('%Y%m%d')
-    end_date_str = yesterday.strftime('%Y%m%d')
-    
+    # today = datetime.now()
+    # yesterday = today - timedelta(days=1)
+    # start_of_year = today.replace(month=1, day=1)
+
+    start_date_str = '20250801'
+    end_date_str = '20250806'
+
     return start_date_str, end_date_str
 
 def sync_data_for_range(start_date_str, end_date_str):
@@ -178,26 +178,26 @@ def scheduled_sync():
     """
     logger.info("=== MULAI SINKRONISASI TERJADWAL ===")
     start_time = datetime.now()
-    
+
     try:
         start_date_str, end_date_str = get_sync_date_range()
         logger.info(f"Rentang tanggal sinkronisasi: {start_date_str} sampai {end_date_str}")
-        
+
         result = sync_data_for_range(start_date_str, end_date_str)
-        
+
         end_time = datetime.now()
         duration = end_time - start_time
-        
+
         if "error" in result:
             logger.error(f"Sinkronisasi GAGAL: {result['error']}")
         else:
             logger.info(f"Sinkronisasi BERHASIL: {result}")
             logger.info(f"Durasi eksekusi: {duration}")
-        
+
     except Exception as e:
         logger.error(f"Error dalam scheduled_sync: {str(e)}")
         logger.error(traceback.format_exc())
-    
+
     logger.info("=== SELESAI SINKRONISASI TERJADWAL ===")
     return result
 
@@ -205,16 +205,16 @@ def run_scheduler():
     """Fungsi untuk menjalankan scheduler dalam thread terpisah."""
     logger.info("Scheduler dimulai. Sinkronisasi akan berjalan pada jam 03:00 dan 20:00")
     logger.info("Untuk menghentikan, tekan Ctrl+C")
-    
+
     # Jadwalkan sinkronisasi pada jam 03:00 dan 20:00
     schedule.every().day.at("03:00").do(scheduled_sync)
     schedule.every().day.at("20:00").do(scheduled_sync)
-    
+
     # Tampilkan jadwal berikutnya
     next_runs = schedule.jobs
     for job in next_runs:
         logger.info(f"Jadwal berikutnya: {job.next_run}")
-    
+
     # Loop scheduler
     while True:
         try:
@@ -233,14 +233,14 @@ def sync_historical_endpoint():
     """Endpoint Flask untuk memicu sinkronisasi manual."""
     start_date_param = request.args.get('start_date')
     end_date_param = request.args.get('end_date')
-    
+
     # Jika parameter tidak diberikan, gunakan range default (awal tahun sampai H-1)
     if not start_date_param or not end_date_param:
         start_date_param, end_date_param = get_sync_date_range()
-    
+
     logger.info(f"Memulai sinkronisasi manual via API: {start_date_param} to {end_date_param}")
     result = sync_data_for_range(start_date_param, end_date_param)
-    
+
     if "error" in result:
         return jsonify(result), 500
     return jsonify(result)
@@ -254,9 +254,9 @@ def sync_status():
             "next_run": job.next_run.isoformat() if job.next_run else None,
             "job_func": job.job_func.__name__
         })
-    
+
     start_date_str, end_date_str = get_sync_date_range()
-    
+
     return jsonify({
         "status": "active",
         "next_scheduled_runs": next_jobs,
@@ -272,7 +272,7 @@ def sync_now():
     """Endpoint untuk memicu sinkronisasi segera."""
     logger.info("Memulai sinkronisasi segera via API")
     result = scheduled_sync()
-    
+
     if "error" in result:
         return jsonify(result), 500
     return jsonify(result)
@@ -284,10 +284,10 @@ def start_flask_server():
 
 if __name__ == '__main__':
     logger.info("=== MEMULAI APLIKASI SYNC HISTORICAL ===")
-    
+
     # Opsi menjalankan aplikasi
     mode = os.getenv('RUN_MODE', 'manual')  # scheduler, flask, both
-    
+
     if mode == 'scheduler':
         # Hanya jalankan scheduler
         run_scheduler()
@@ -298,13 +298,13 @@ if __name__ == '__main__':
         # Jalankan keduanya dalam thread terpisah
         scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
         flask_thread = threading.Thread(target=start_flask_server, daemon=True)
-        
+
         scheduler_thread.start()
         flask_thread.start()
-        
+
         logger.info("Aplikasi berjalan dalam mode gabungan (scheduler + API)")
         logger.info("Tekan Ctrl+C untuk menghentikan")
-        
+
         try:
             # Keep main thread alive
             while True:

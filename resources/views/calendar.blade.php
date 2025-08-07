@@ -85,7 +85,7 @@
                     </div>
                 </div>
 
-                <div class="flex-grow grid grid-cols-7 gap-px bg-gray-200 overflow-y-auto custom-scrollbar"
+                <div class="flex-grow grid grid-cols-7 gap-px bg-gray-200 overflow-x-auto custom-scrollbar"
                 style="grid-template-rows: 32px repeat({{ count($weeks) }}, 1fr);">
                     @foreach (['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $dayName)
                         <div class="text-center bg-white h-8 text-xs font-semibold
@@ -116,7 +116,7 @@
                                     </span>
 
                                     @if ($hasData)
-                                        <div class="mt-1.5 flex-grow overflow-y-auto custom-scrollbar">
+                                        <div class="mt-1.5 flex-grow">
                                             <ul class="text-xs space-y-1 pr-1">
                                                 <li class="flex items-center text-green-600">
                                                     <span class="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></span>
@@ -124,7 +124,7 @@
                                                 </li>
                                                 <li class="flex items-center text-violet-600">
                                                     <span class="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></span>
-                                                    <span class="truncate">Value :<strong class="ml-1">$ {{ number_format($data[$dateKey]['Total Value'], 0, ',', '.') }}</strong></span>
+                                                    <span class="truncate">Value :<strong class="ml-1">${{ number_format($data[$dateKey]['Total Value'], 0, ',', '.') }}</strong></span>
                                                 </li>
                                             </ul>
                                         </div>
