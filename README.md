@@ -59,4 +59,4 @@ npm run dev
 
 > ⚠️ **IMPORTANT:** Jangan lupa jalankan file sync_historical.py ketika menjalankan atau deploy ke server atau hosting agar data selalu terupdate.
 > python akan auto hit ke SAP pada jam 20.00 dan jam 03.00 untuk menghindari kendala mati listrik ketika dini hari 
-> `npm run dev` setelah mengedit file Tailwind agar style terkompilasi ulang.
+> Jalankan `npm run dev` setelah mengedit file Tailwind agar style terkompilasi ulang.
