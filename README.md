@@ -70,10 +70,10 @@ npm run dev
 
 ### ⚠️MODE UNTUK MENJALANKAN FILE PYTHON sync_historical.py
 ```bash
-RUN MODE "scheduler" //hanya menjalankan pload data sesuai jadwal
-RUN MODE "flask" //hanya menjalankan load data ketika API di hit
-RUN MODE "both" //menjalankan load data ketika di hit atau sesuai jadwal
-RUN MODE "manual" //menjalankan load data ketika py dijalankan
+RUN MODE "scheduler" #hanya menjalankan pload data sesuai jadwal
+RUN MODE "flask" #hanya menjalankan load data ketika API di hit
+RUN MODE "both" #menjalankan load data ketika di hit atau sesuai jadwal
+RUN MODE "manual" #menjalankan load data ketika py dijalankan
 
 ```
 
