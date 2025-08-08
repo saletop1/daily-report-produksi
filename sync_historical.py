@@ -58,7 +58,7 @@ def get_sync_date_range():
     yesterday = today - timedelta(days=1)
     start_of_year = today.replace(month=8, day=1)
 
-    start_date_str = start_date_str.strftime('%Y%m%d')
+    start_date_str = start_of_year.strftime('%Y%m%d')
     end_date_str = yesterday.strftime('%Y%m%d')
 
     return start_date_str, end_date_str

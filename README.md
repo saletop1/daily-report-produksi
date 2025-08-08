@@ -47,14 +47,34 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-### 4. Import Database (Karena Database tidak dibangun dari migration laravel)
+### 4. Setting Database (MYSQL)
 
-_File dikirimkan secara personal_
+Database disediakan dalam dua versi 
+1. Struktur + Data = daily_report_db (+Data).sql
+2. Struktur only (kecuali user) = Structure_only.sql
+
+>Sudah disediakan juga di migration dan modelnya, apabila terjadi error ketika melakukan konfirgurasi dengan file sql
+
+```bash
+#untuk menjalankan migration dan model gunakan script ini
+php artisan migrate
+#untuk menjalankan UserSeeder gunakan script ini
+php artisan db:seed
+```
 
 ### 5. Jalankan Server Lokal
 ```bash
 php artisan serve
 npm run dev
+```
+
+### ⚠️MODE UNTUK MENJALANKAN FILE PYTHON sync_historical.py
+```bash
+RUN MODE "scheduler" //hanya menjalankan pload data sesuai jadwal
+RUN MODE "flask" //hanya menjalankan load data ketika API di hit
+RUN MODE "both" //menjalankan load data ketika di hit atau sesuai jadwal
+RUN MODE "manual" //menjalankan load data ketika py dijalankan
+
 ```
 
 > ⚠️ **IMPORTANT:** Jangan lupa jalankan file sync_historical.py ketika menjalankan atau deploy ke server atau hosting agar data selalu terupdate.
