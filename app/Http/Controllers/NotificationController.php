@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DailyReportMail; // Pastikan Anda sudah membuat Mailable ini
 use Illuminate\Support\Facades\Log; // Gunakan Log untuk debugging
+use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
@@ -25,8 +26,9 @@ class NotificationController extends Controller
             'details.Sold Value' => 'required|numeric',
         ]);
 
+
         // Ambil alamat email tujuan dari file .env, atau gunakan default
-        $recipientEmail = env('MAIL_REPORT_RECIPIENT', 'admin@example.com');
+        $recipientEmail = Auth::user()->email;
 
         try {
             // Kirim email menggunakan Mailable yang sudah dibuat

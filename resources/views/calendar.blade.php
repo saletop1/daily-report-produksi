@@ -284,7 +284,7 @@
                 emailStatus.classList.remove('text-red-500', 'text-green-500');
                 this.disabled = true;
 
-                fetch('/api/send-email-notification', {
+                fetch('api/send-email-notification', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
