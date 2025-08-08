@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,3 +39,4 @@ Route::middleware(['auth'])->group(function () {
 
 // Rute autentikasi yang dibuat oleh Laravel Breeze
 require __DIR__.'/auth.php';
+Route::post('/send-email-notification', [NotificationController::class, 'sendEmailNotification']);

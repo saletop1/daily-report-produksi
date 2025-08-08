@@ -1,11 +1,4 @@
 <x-app-layout>
-    {{--
-        Catatan:
-        File ini sekarang menggunakan komponen layout utama <x-app-layout>.
-        Semua elemen <head>, <body>, dan tag <script> yang tidak perlu telah dihapus
-        karena sudah ditangani oleh file layout.
-    --}}
-
     {{-- CSS untuk Running Text --}}
     <style>
         .marquee-container {
@@ -20,24 +13,24 @@
         .marquee-text {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee 55s linear infinite;
+            animation: marquee 20s linear infinite;
         }
         @keyframes marquee {
             0%   { transform: translate(0, 0); }
-            80% { transform: translate(-100%, 0); }
+            100% { transform: translate(-100%, 0); }
         }
     </style>
 
     {{-- Running Text --}}
     <div class="marquee-container">
         <div class="marquee-text">
-            Selamat datang di laporan hasil produksi harian PT. Kayu Mebel Indonesia.
+            Ini adalah contoh running text. Anda bisa mengganti teks ini dengan pengumuman atau informasi penting lainnya.
         </div>
     </div>
 
 
     {{-- Wrapper utama untuk konten dan footer --}}
-    <div class="flex flex-col" style="height: calc(100vh - 4rem - 35px);"> {{-- Tinggi disesuaikan untuk running text --}}
+    <div class="flex flex-col" style="height: calc(100vh - 4rem - 44px);"> {{-- Tinggi disesuaikan untuk running text --}}
 
         {{-- Konten utama (kalender dan rekap) yang akan mengisi ruang tersedia --}}
         <div class="flex flex-col lg:flex-row flex-grow overflow-hidden">
@@ -171,15 +164,15 @@
             </div>
         </div>
 
-        {{-- <!-- Bagian Footer -->
+        <!-- Bagian Footer -->
         <footer class="flex-shrink-0 bg-white border-t border-gray-200">
-            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-2 lg:px-2">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
                 <p class="text-center text-sm text-gray-500">
-                    &copy; {{ date('Y') }} PT. KAYU MEBEL INDONESIA. All rights reserved.
+                    &copy; {{ date('Y') }} Nama Perusahaan Anda. All rights reserved.
                 </p>
             </div>
         </footer>
-    </div> --}}
+    </div>
 
 
     <!-- Modal untuk menampilkan detail data harian -->
@@ -197,16 +190,15 @@
                 <div id="modal-body" class="space-y-4">
                     <!-- Konten detail akan dimasukkan di sini oleh JavaScript -->
                 </div>
-                <!-- Tombol Notifikasi WA -->
+                <!-- Tombol Notifikasi Email -->
                 <div class="mt-6 pt-4 border-t border-gray-200">
-                    <button id="send-wa-btn" class="w-full flex items-center justify-center bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                           <path d="M10.25 1.75a8.5 8.5 0 106.24 14.56l-1.35-1.35a6.5 6.5 0 11-4.89-11.12V1.75z" />
-                           <path d="M10.25 1.75a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V2.5a.75.75 0 01.75-.75zM12.5 10a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                    <button id="send-email-btn" class="w-full flex items-center justify-center bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-colors duration-300 font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        Kirim Notifikasi WA
+                        Kirim Laporan Email Sekarang!!
                     </button>
-                    <p id="wa-status" class="text-center text-sm text-gray-500 mt-2"></p>
+                    <p id="email-status" class="text-center text-sm text-gray-500 mt-2"></p>
                 </div>
             </div>
         </div>
@@ -221,8 +213,8 @@
             const modalTitle = document.getElementById('modal-title');
             const modalBody = document.getElementById('modal-body');
             const dayCells = document.querySelectorAll('.data-day');
-            const sendWaBtn = document.getElementById('send-wa-btn');
-            const waStatus = document.getElementById('wa-status');
+            const sendEmailBtn = document.getElementById('send-email-btn');
+            const emailStatus = document.getElementById('email-status');
 
             let currentDetails = {};
             let currentDate = '';
@@ -257,7 +249,7 @@
                         </div>
                     </div>
                 `;
-                waStatus.textContent = ''; // Reset status
+                emailStatus.textContent = ''; // Reset status
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     modalPanel.classList.remove('scale-95', 'opacity-0');
@@ -283,15 +275,15 @@
                 });
             });
 
-            sendWaBtn.addEventListener('click', function() {
-                waStatus.textContent = 'Mengirim notifikasi...';
+            sendEmailBtn.addEventListener('click', function() {
+                emailStatus.textContent = 'Mengirim email...';
                 this.disabled = true;
 
-                fetch('/api/send-whatsapp-notification', {
+                fetch('/api/send-email-notification', { // URL diubah
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}' // Penting untuk keamanan Laravel
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({
                         date: currentDate,
@@ -301,20 +293,20 @@
                 .then(response => response.json())
                 .then(data => {
                     if(data.success) {
-                        waStatus.textContent = 'Notifikasi berhasil dikirim!';
-                        waStatus.classList.remove('text-red-500');
-                        waStatus.classList.add('text-green-500');
+                        emailStatus.textContent = 'Email berhasil dikirim!';
+                        emailStatus.classList.remove('text-red-500');
+                        emailStatus.classList.add('text-green-500');
                     } else {
-                        waStatus.textContent = `Gagal mengirim: ${data.message}`;
-                        waStatus.classList.remove('text-green-500');
-                        waStatus.classList.add('text-red-500');
+                        emailStatus.textContent = `Gagal mengirim: ${data.message}`;
+                        emailStatus.classList.remove('text-green-500');
+                        emailStatus.classList.add('text-red-500');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    waStatus.textContent = 'Terjadi kesalahan saat mengirim.';
-                    waStatus.classList.remove('text-green-500');
-                    waStatus.classList.add('text-red-500');
+                    emailStatus.textContent = 'Terjadi kesalahan saat mengirim.';
+                    emailStatus.classList.remove('text-green-500');
+                    emailStatus.classList.add('text-red-500');
                 })
                 .finally(() => {
                     this.disabled = false;
