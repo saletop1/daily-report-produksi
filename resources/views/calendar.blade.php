@@ -24,7 +24,7 @@
         }
         @keyframes marquee {
             0%   { transform: translate(0, 0); }
-            80% { transform: translate(-100%, 0); }
+            100% { transform: translate(-100%, 0); }
         }
     </style>
 
@@ -77,16 +77,15 @@
                         <p class="text-sm text-gray-800 font-medium">Total Transfer Value</p>
                         <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
                     </div>
-
                 </div>
                 <div class="mt-auto pt-6 flex-shrink-0">
                      <a href="{{ route('calendar.export', ['year' => $year, 'month' => $month]) }}"
                        class="flex w-full items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                         Export PDF
-                    </a>
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                             <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                         </svg>
+                          Export PDF
+                     </a>
                 </div>
             </div>
 
@@ -120,8 +119,8 @@
                          style="grid-template-rows: 32px repeat({{ count($weeks) }}, 1fr);">
                         @foreach (['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as $dayName)
                             <div class="text-center bg-white h-8 text-xs font-semibold
-                                    {{ $dayName == 'Min' ? 'text-red-600' : 'text-gray-600' }}
-                                    uppercase tracking-wider flex items-center justify-center">
+                                 {{ $dayName == 'Min' ? 'text-red-600' : 'text-gray-600' }}
+                                 uppercase tracking-wider flex items-center justify-center">
                                 {{ $dayName }}
                             </div>
                         @endforeach
@@ -136,11 +135,11 @@
                                         $isSunday = $day->isSunday();
                                     @endphp
                                     <div class="relative bg-white p-2 flex flex-col overflow-hidden
-                                            {{ $hasData ? 'cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
-                                         @if($hasData)
-                                             data-date='{{ $day->isoFormat('dddd, D MMMM YYYY') }}'
-                                             data-details='{{ json_encode($data[$dateKey]) }}'
-                                         @endif
+                                         {{ $hasData ? 'cursor-pointer transition-transform duration-200 hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
+                                        @if($hasData)
+                                            data-date='{{ $day->isoFormat('dddd, D MMMM YYYY') }}'
+                                            data-details='{{ json_encode($data[$dateKey]) }}'
+                                        @endif
                                     >
                                         <span class="font-medium text-sm {{ $isToday ? 'bg-blue-600 text-white rounded-full flex items-center justify-center h-7 w-7' : ($isSunday ? 'text-red-600' : 'text-gray-800') }}">
                                             {{ $day->day }}
@@ -170,16 +169,7 @@
                 </div>
             </div>
         </div>
-
-        {{-- <!-- Bagian Footer -->
-        <footer class="flex-shrink-0 bg-white border-t border-gray-200">
-            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-2 lg:px-2">
-                <p class="text-center text-sm text-gray-500">
-                    &copy; {{ date('Y') }} PT. KAYU MEBEL INDONESIA. All rights reserved.
-                </p>
-            </div>
-        </footer>
-    </div> --}}
+    </div>
 
 
     <!-- Modal untuk menampilkan detail data harian -->
@@ -197,16 +187,21 @@
                 <div id="modal-body" class="space-y-4">
                     <!-- Konten detail akan dimasukkan di sini oleh JavaScript -->
                 </div>
-                <!-- Tombol Notifikasi WA -->
-                <div class="mt-6 pt-4 border-t border-gray-200">
-                    <button id="send-wa-btn" class="w-full flex items-center justify-center bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors duration-300 font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                           <path d="M10.25 1.75a8.5 8.5 0 106.24 14.56l-1.35-1.35a6.5 6.5 0 11-4.89-11.12V1.75z" />
-                           <path d="M10.25 1.75a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V2.5a.75.75 0 01.75-.75zM12.5 10a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                        </svg>
-                        Kirim Notifikasi WA
-                    </button>
-                    <p id="wa-status" class="text-center text-sm text-gray-500 mt-2"></p>
+            </div>
+            <!-- Footer Modal dengan Tombol Aksi -->
+            <div class="p-5 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <div class="space-y-4">
+                    <!-- Tombol Notifikasi Email -->
+                    <div>
+                        <button id="send-email-btn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium disabled:bg-blue-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                            Kirim Notifikasi Email
+                        </button>
+                        <p id="email-status" class="text-xs text-center mt-2 text-gray-500"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -221,8 +216,9 @@
             const modalTitle = document.getElementById('modal-title');
             const modalBody = document.getElementById('modal-body');
             const dayCells = document.querySelectorAll('.data-day');
-            const sendWaBtn = document.getElementById('send-wa-btn');
-            const waStatus = document.getElementById('wa-status');
+
+            const sendEmailBtn = document.getElementById('send-email-btn');
+            const emailStatus = document.getElementById('email-status');
 
             let currentDetails = {};
             let currentDate = '';
@@ -257,7 +253,7 @@
                         </div>
                     </div>
                 `;
-                waStatus.textContent = ''; // Reset status
+                emailStatus.textContent = '';
                 modal.classList.remove('hidden');
                 setTimeout(() => {
                     modalPanel.classList.remove('scale-95', 'opacity-0');
@@ -283,15 +279,17 @@
                 });
             });
 
-            sendWaBtn.addEventListener('click', function() {
-                waStatus.textContent = 'Mengirim notifikasi...';
+            sendEmailBtn.addEventListener('click', function() {
+                emailStatus.textContent = 'Mengirim notifikasi email...';
+                emailStatus.classList.remove('text-red-500', 'text-green-500');
                 this.disabled = true;
 
-                fetch('/api/send-whatsapp-notification', {
+                fetch('/api/send-email-notification', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}' // Penting untuk keamanan Laravel
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({
                         date: currentDate,
@@ -300,21 +298,25 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if(data.success) {
-                        waStatus.textContent = 'Notifikasi berhasil dikirim!';
-                        waStatus.classList.remove('text-red-500');
-                        waStatus.classList.add('text-green-500');
+                    if (data.success) {
+                        emailStatus.textContent = 'Notifikasi email berhasil dikirim!';
+                        emailStatus.classList.add('text-green-500');
                     } else {
-                        waStatus.textContent = `Gagal mengirim: ${data.message}`;
-                        waStatus.classList.remove('text-green-500');
-                        waStatus.classList.add('text-red-500');
+                        // PERBAIKAN: Menggunakan cara yang lebih sederhana untuk membuat string pesan error
+                        var errorMessage = 'Gagal mengirim: ';
+                        if (data && data.message) {
+                            errorMessage += data.message;
+                        } else {
+                            errorMessage += 'Error tidak diketahui';
+                        }
+                        emailStatus.textContent = errorMessage;
+                        emailStatus.classList.add('text-red-500');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    waStatus.textContent = 'Terjadi kesalahan saat mengirim.';
-                    waStatus.classList.remove('text-green-500');
-                    waStatus.classList.add('text-red-500');
+                    emailStatus.textContent = 'Terjadi kesalahan jaringan saat mengirim email.';
+                    emailStatus.classList.add('text-red-500');
                 })
                 .finally(() => {
                     this.disabled = false;

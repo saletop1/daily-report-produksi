@@ -10,6 +10,8 @@
 namespace PHPUnit\Framework\MockObject\Builder;
 
 /**
+ * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
+ *
  * @internal This class is not covered by the backward compatibility promise for PHPUnit
  */
 interface ParametersMatch extends Stub
@@ -44,8 +46,6 @@ interface ParametersMatch extends Stub
      * // match any number of parameters
      * $b->withAnyParameters();
      * </code>
-     *
-     * @no-named-arguments Parameter names are not covered by the backward compatibility promise for PHPUnit
      */
     public function withAnyParameters(): self;
 }

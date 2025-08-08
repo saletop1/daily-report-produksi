@@ -283,7 +283,14 @@ final readonly class Application
             }
 
             $shellExitCode = (new ShellExitCodeCalculator)->calculate(
-                $configuration,
+                $configuration->failOnDeprecation(),
+                $configuration->failOnPhpunitDeprecation(),
+                $configuration->failOnEmptyTestSuite(),
+                $configuration->failOnIncomplete(),
+                $configuration->failOnNotice(),
+                $configuration->failOnRisky(),
+                $configuration->failOnSkipped(),
+                $configuration->failOnWarning(),
                 $result,
             );
 
@@ -542,7 +549,7 @@ final readonly class Application
         $runtime = 'PHP ' . PHP_VERSION;
 
         if (CodeCoverage::instance()->isActive()) {
-            $runtime .= ' with ' . CodeCoverage::instance()->driverNameAndVersion();
+            $runtime .= ' with ' . CodeCoverage::instance()->driver()->nameAndVersion();
         }
 
         $this->writeMessage($printer, 'Runtime', $runtime);
