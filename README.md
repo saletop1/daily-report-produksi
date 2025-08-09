@@ -76,6 +76,25 @@ RUN MODE "both" #menjalankan load data ketika di hit atau sesuai jadwal
 RUN MODE "manual" #menjalankan load data ketika py dijalankan
 
 ```
+# HOW TO DEPLOY
+## 1. LAKUKAN INSTALASI DEPENDENCY DI LOCAL (COMPOSER & NPM)
+
+```bash
+# lakukan di lokal
+npm install
+npm run build
+
+composer install
+composer install --optimize-autoloader --no-dev
+
+# konfigurasi .env (pastikan sudah import file sql ke database)
+```
+
+## 2. Tahapan di Control Panel untuk deploy
+- Pisahkan folder public dengan folder app
+- Pastikan di dalam folder app mimiliki folder public yang berisi (file manifest.json dan folder asset) -> _diperoleh dari npm run build_
+- perhatikan struktur file autoload dll agak mengarah ke folder app nya
+
 
 > ⚠️ **IMPORTANT:** Jangan lupa jalankan file sync_historical.py ketika menjalankan atau deploy ke server atau hosting agar data selalu terupdate.
 > python akan auto hit ke SAP pada jam 20.00 dan jam 03.00 untuk menghindari kendala mati listrik ketika dini hari 

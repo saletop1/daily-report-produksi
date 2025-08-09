@@ -38,7 +38,7 @@
                 </div>
             </div>
 
-            <div class="w-full lg:w-2/3 xl:w-3/4 bg-gray-100 p-4 sm:p-6 lg:p-8 order-2 lg:order-1 flex flex-col">
+            <div class="w-full lg:w-2/3 xl:w-3/4 bg-gray-100 p-4 sm:p-6 lg:p-2 order-2 lg:order-1 flex flex-col">
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col h-full w-full">
                     <div class="p-3 border-b"><div class="flex flex-col sm:flex-row items-center justify-between"><h1 class="text-2xl ms-4 font-bold text-gray-900">{{ \Carbon\Carbon::create($year, $month)->isoFormat('MMMM YYYY') }}</h1><div class="flex items-center space-x-2 mt-4 sm:mt-0"><a href="{{ route('calendar.index', ['year' => $prevYear, 'month' => $prevMonth]) }}" class="p-2 rounded-full text-gray-500 hover:bg-gray-100"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></a><a href="{{ route('calendar.index', ['year' => $nextYear, 'month' => $nextMonth]) }}" class="p-2 rounded-full text-gray-500 hover:bg-gray-100"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></a></div></div></div>
                     <div class="flex-grow grid grid-cols-7 gap-px bg-gray-200" style="grid-template-rows: 32px repeat({{ count($weeks) }}, 1fr);">
