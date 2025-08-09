@@ -4,35 +4,34 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\DailyReportMail; // Ganti dengan Mailable Anda
+use App\Mail\DailyReportMail; // <-- Jangan lupa di-import
 
 class NotificationController extends Controller
 {
     public function sendDailyReport(Request $request)
     {
-        // Validasi request, sekarang dengan 'recipients'
+        // ... (validasi request Anda)
         $validated = $request->validate([
             'date' => 'required|date_format:Y-m-d',
             'details' => 'required|array',
-            'recipients' => 'required|array',       // Pastikan recipients adalah array
-            'recipients.*' => 'required|email',  // Pastikan setiap item adalah email valid
+            'recipients' => 'required|array',
+            'recipients.*' => 'required|email',
         ]);
 
+        // Siapkan data dalam format yang diharapkan oleh Mailable
+        $reportData = [
+            'date' => $validated['date'],
+            'details' => $validated['details'],
+        ];
+
         try {
-            // Laravel Mail::to() bisa langsung menerima array email
-            Mail::to($validated['recipients'])->send(new DailyReportMail($validated['date'], $validated['details']));
+            // Panggil Mailable dan kirim data
+            Mail::to($validated['recipients'])->send(new DailyReportMail($reportData));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Notifikasi berhasil dikirim ke ' . count($validated['recipients']) . ' penerima.'
-            ]);
-
+            return response()->json(['success' => true, 'message' => 'Email laporan berhasil dikirim.']);
         } catch (\Exception $e) {
-            report($e); // Laporkan error untuk debugging
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengirim email: Terjadi kesalahan pada server.'
-            ], 500);
+            // ... (penanganan error)
+            return response()->json(['success' => false, 'message' => 'Gagal mengirim email.'], 500);
         }
     }
 }
