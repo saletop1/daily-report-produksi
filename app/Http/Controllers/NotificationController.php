@@ -3,44 +3,36 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\DailyReportMail; // Pastikan Anda sudah membuat Mailable ini
-use Illuminate\Support\Facades\Log; // Gunakan Log untuk debugging
-use Illuminate\Support\Facades\Auth;
+use App\Mail\DailyReportMail; // Ganti dengan Mailable Anda
 
 class NotificationController extends Controller
 {
-    /**
-     * Mengirim notifikasi Email berdasarkan data dari frontend.
-     */
-    public function sendEmailNotification(Request $request)
+    public function sendDailyReport(Request $request)
     {
-        // Validasi yang lebih spesifik untuk memastikan data ada
+        // Validasi request, sekarang dengan 'recipients'
         $validated = $request->validate([
-            'date' => 'required|string',
+            'date' => 'required|date_format:Y-m-d',
             'details' => 'required|array',
-            'details.gr' => 'required|numeric',
-            'details.whfg' => 'required|numeric',
-            'details.Total Value' => 'required|numeric',
-            'details.Sold Value' => 'required|numeric',
+            'recipients' => 'required|array',       // Pastikan recipients adalah array
+            'recipients.*' => 'required|email',  // Pastikan setiap item adalah email valid
         ]);
 
-
-        // Ambil alamat email tujuan dari file .env, atau gunakan default
-        $recipientEmail = Auth::user()->email;
-
         try {
-            // Kirim email menggunakan Mailable yang sudah dibuat
-            // Data yang divalidasi langsung dikirim ke Mailable
-            Mail::to($recipientEmail)->send(new DailyReportMail($validated));
+            // Laravel Mail::to() bisa langsung menerima array email
+            Mail::to($validated['recipients'])->send(new DailyReportMail($validated['date'], $validated['details']));
 
-            return response()->json(['success' => true, 'message' => 'Email laporan telah berhasil dikirim.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifikasi berhasil dikirim ke ' . count($validated['recipients']) . ' penerima.'
+            ]);
 
         } catch (\Exception $e) {
-            // Laporkan error ke log Laravel untuk debugging
-            Log::error('Email Sending Failed: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Gagal mengirim email. Periksa konfigurasi server dan log.'], 500);
+            report($e); // Laporkan error untuk debugging
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim email: Terjadi kesalahan pada server.'
+            ], 500);
         }
     }
 }

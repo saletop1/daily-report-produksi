@@ -34,8 +34,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/calendar/export/{year}/{month}', [CalendarController::class, 'exportPdf'])
         ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])
         ->name('calendar.export');
-
-    Route::post('/send-email-notification', [NotificationController::class, 'sendEmailNotification'])->name('send.email.notification');
+    Route::post('/send-email-notification', [NotificationController::class, 'sendDailyReport'])->name('api.notification.send');
+    // Route::post('/send-email-notification', [NotificationController::class, 'sendEmailNotification'])->name('send.email.notification');
 });
 
 
