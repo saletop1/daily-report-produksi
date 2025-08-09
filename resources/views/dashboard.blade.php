@@ -23,30 +23,49 @@
                 </div>
             </header>
 
-            <!-- Grid Kartu KPI -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Kartu Total GR -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Goods Receipt (PRO)</h3>
-                    <p class="mt-2 text-3xl font-bold text-green-600">{{ number_format($totalGr, 0, ',', '.') }}</p>
-                </div>
-                                <!-- [FIXED] Kartu Total Sold Value -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Sold Value</h3>
-                    <p class="mt-2 text-3xl font-bold text-amber-600">$ {{ number_format($totalTransferValue, 0, ',', '.') }}</p>
-                </div>
-                <!-- Kartu Total WHFG -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Transfer to WHFG</h3>
-                    <p class="mt-2 text-3xl font-bold text-indigo-600">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
-                </div>
 
-                <!-- Kartu Total Transfer Value -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-sm font-medium text-gray-500">Total Transfer Value</h3>
-                    <p class="mt-2 text-3xl font-bold text-blue-600">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
-                </div>
-            </div>
+    <div class="bg-white p-6 rounded-2xl shadow-sm flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-medium text-gray-500">Total Goods Receipt (PRO)</h3>
+            <p class="mt-2 text-3xl font-bold text-green-600">{{ number_format($totalGr, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-green-100 rounded-full p-3">
+            <img src="{{ asset('images/icons/product.png') }}" alt="Goods Receipt Icon" class="h-10 w-10">
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-medium text-gray-500">Total Sold Value</h3>
+            <p class="mt-2 text-3xl font-bold text-amber-600">$ {{ number_format($totalTransferValue, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-amber-100 rounded-full p-3">
+            <img src="{{ asset('images/icons/sold.png') }}" alt="Sold Value Icon" class="h-10 w-10">
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-medium text-gray-500">Total Transfer to WHFG</h3>
+            <p class="mt-2 text-3xl font-bold text-indigo-600">{{ number_format($totalWhfg, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-indigo-100 rounded-full p-3">
+            <img src="{{ asset('images/icons/forklift.png') }}" alt="Warehouse Icon" class="h-10 w-10">
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-medium text-gray-500">Total Transfer Value</h3>
+            <p class="mt-2 text-3xl font-bold text-blue-600">$ {{ number_format($totalSoldValue, 0, ',', '.') }}</p>
+        </div>
+        <div class="bg-blue-100 rounded-full p-3">
+            <img src="{{ asset('images/icons/exchange.png') }}" alt="Transfer Value Icon" class="h-10 w-10">
+        </div>
+    </div>
+
+</div>
 
             <!-- Grafik Analisis -->
             <div class="mt-8 bg-white p-6 rounded-2xl shadow-sm">

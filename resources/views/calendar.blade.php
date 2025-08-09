@@ -13,7 +13,7 @@
         .marquee-text {
             display: inline-block;
             padding-left: 100%;
-            animation: marquee 55s linear infinite;
+            animation: marquee 10s linear infinite;
         }
         @keyframes marquee {
             0%   { transform: translate(0, 0); }

@@ -54,7 +54,7 @@
                 </tbody>
             </table>
 
-            <p style="margin-top: 25px;">Ini adalah email yang dibuat secara otomatis. Mohon untuk tidak membalas email ini.</p>
+            <p style="margin-top: 25px;">Ini adalah email yang dibuat secara otomatis. Mohon untuk tidak membalas email ini. </p>
         </div>
         <div class="footer">
             <p>&copy; {{ date('Y') }} PT. Kayu Mebel Indonesia. All rights reserved.</p>
