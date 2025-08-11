@@ -46,28 +46,47 @@
                         @endforeach
                         @foreach ($weeks as $week)
                             @foreach ($week as $day)
-                                @if ($day)
-                                    @php
-                                        $dateKey = $day->format('Y-m-d');
-                                        $hasData = isset($data[$dateKey]);
-                                        $isToday = $day->isToday();
-                                        $isSunday = $day->isSunday();
-                                    @endphp
-                                    <div class="relative bg-white p-2 flex flex-col {{ $hasData ? 'cursor-pointer transition-transform duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
-                                         @if($hasData)
-                                            data-date='{{ $day->isoFormat('dddd, D MMMM YYYY') }}'
-                                            data-details='{{ json_encode($data[$dateKey]) }}'
-                                            data-date-key='{{ $dateKey }}'
-                                         @endif>
-                                        <span class="font-medium text-sm {{ $isToday ? 'bg-blue-600 text-white rounded-full flex items-center justify-center h-7 w-7' : ($isSunday ? 'text-red-600' : 'text-gray-800') }}">{{ $day->day }}</span>
-                                        @if ($hasData)
-                                            <div class="mt-1.5 flex-grow"><ul class="text-xs space-y-1 pr-1"><li class="flex items-center text-green-600"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span><span class="truncate">GR: <strong>{{ number_format($data[$dateKey]['gr'], 0, ',', '.') }}</strong></span></li><li class="flex items-center text-violet-600"><span class="w-2 h-2 bg-violet-500 rounded-full mr-2"></span><span class="truncate">Value: <strong>${{ number_format($data[$dateKey]['Total Value'], 0, ',', '.') }}</strong></span></li></ul></div>
-                                        @endif
-                                    </div>
-                                @else
-                                    <div class="bg-gray-50"></div>
-                                @endif
-                            @endforeach
+    @if ($day)
+        @php
+            $dateKey = $day->format('Y-m-d');
+            $hasData = isset($data[$dateKey]);
+            $isToday = $day->isToday();
+            $isSunday = $day->isSunday();
+
+            // LOGIKA BARU: Cek jika value rendah
+            $isLowValue = $hasData && $data[$dateKey]['Total Value'] <= 20000;
+        @endphp
+
+        {{-- PERUBAHAN DI SINI: tambahkan kondisi untuk background --}}
+        <div class="relative bg-white p-2 flex flex-col ...
+            {{ $hasData ? 'cursor-pointer transition-transform duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:z-10 data-day' : '' }}"
+             @if($hasData)
+                data-date='{{ $day->isoFormat('dddd, D MMMM YYYY') }}'
+                data-details='{{ json_encode($data[$dateKey]) }}'
+                data-date-key='{{ $dateKey }}'
+             @endif>
+
+            <span class="font-medium text-sm {{ $isToday ? 'bg-blue-600 text-white rounded-full flex items-center justify-center h-7 w-7' : ($isSunday ? 'text-red-600' : 'text-gray-800') }}">{{ $day->day }}</span>
+
+            @if ($hasData)
+                <div class="mt-1.5 flex-grow">
+                    <ul class="text-xs space-y-1 pr-1">
+                        <li class="flex items-center text-green-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            <span class="truncate">GR: <strong>{{ number_format($data[$dateKey]['gr'], 0, ',', '.') }}</strong></span>
+                        </li>
+                        <li class="flex items-center text-violet-600">
+                            <span class="w-2 h-2 bg-violet-500 rounded-full mr-2"></span>
+                            <span class="truncate">Value: <strong>${{ number_format($data[$dateKey]['Total Value'], 0, ',', '.') }}</strong></span>
+                        </li>
+                    </ul>
+                </div>
+            @endif
+        </div>
+    @else
+        <div class="bg-gray-50"></div>
+    @endif
+@endforeach
                         @endforeach
                     </div>
                 </div>
