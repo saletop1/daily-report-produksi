@@ -39,6 +39,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('calendar.export');
     Route::post('/send-email-notification', [NotificationController::class, 'sendDailyReport'])->name('api.notification.send');
     // Route::post('/send-email-notification', [NotificationController::class, 'sendEmailNotification'])->name('send.email.notification');
+    // Route untuk menangani klik tombol dari email supervisor
+    Route::get('/notify-team/{date}', [CalendarController::class, 'notifyTeamFromSupervisor'])
+        ->name('supervisor.notify-team')
+        ->middleware('signed'); // Middleware untuk memvalidasi URL
 });
 
 
