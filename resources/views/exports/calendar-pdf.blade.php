@@ -209,7 +209,7 @@
 
         {{-- Footer --}}
         <div class="footer">
-            &copy; {{ date('Y') }} PT. Kayu Mebel Indonesia. All rights reserved. | Dokumen ini dibuat pada {{ now()->isoFormat('D MMMM YYYY, HH:mm') }}
+            &copy; {{ date('Y') }} PT. Kayu Mebel Indonesia. All rights reserved. | Dokumen ini dibuat pada {{ now()->isoFormat('D MMMM YYYY') }}
         </div>
     </div>
 </body>
