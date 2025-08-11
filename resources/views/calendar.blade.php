@@ -1,32 +1,32 @@
-<x-app-layout>
+{{-- <x-app-layout>
     {{-- CSS untuk Running Text --}}
     <style>
-        .marquee-container {
-            width: 100%;
-            overflow: hidden;
-            background-color: #1a202c;
-            color: white;
-            padding: 10px 0;
-            white-space: nowrap;
-            box-sizing: border-box;
-        }
-        .marquee-text {
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 10s linear infinite;
-        }
-        @keyframes marquee {
-            0%   { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-    </style>
+    .marquee-container {
+        width: 100%;
+        overflow: hidden;
+        background-color: #1a202c;
+        color: white;
+        padding: 10px 0;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+    .marquee-text {
+        display: inline-block;
+        padding-left: 100%;
+        animation: marquee 5s linear infinite;
+    }
+    @keyframes marquee {
+        0%   { transform: translate(0, 0); }
+        100% { transform: translate(-100%, 0); }
+    }
+</style>
 
-    {{-- Running Text --}}
-    <div class="marquee-container">
-        <div class="marquee-text">
-            Selamat datang di laporan hasil produksi harian PT. Kayu Mebel Indonesia.
-        </div>
+{{-- Running Text --}}
+<div class="marquee-container">
+    <div class="marquee-text">
+        Selamat datang di laporan hasile produksi harian PT. Kayu Mebel Indonesia.
     </div>
+</div>
 
     {{-- Wrapper utama --}}
     <div class="flex flex-col" style="height: calc(100vh - 4rem - 45px);">
@@ -258,4 +258,4 @@
         });
     </script>
     @endpush
-</x-app-layout>
+</x-app-layout> --}}

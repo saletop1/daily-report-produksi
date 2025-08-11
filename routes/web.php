@@ -29,7 +29,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/calendar/{year?}/{month?}', [CalendarController::class, 'index'])
         ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])
         ->name('calendar.index');
-
+    // Rute untuk menampilkan kalender utama
+    Route::get('/calendar/{year?}/{month?}', [CalendarController::class, 'index'])->name('calendar.index');
+    // TAMBAHKAN BARIS DI BAWAH INI
+    Route::get('/export/pdf/{year}/{month}', [CalendarController::class, 'exportPdf'])->name('calendar.exportPdf');
     // Rute untuk export PDF
     Route::get('/calendar/export/{year}/{month}', [CalendarController::class, 'exportPdf'])
         ->where(['year' => '[0-9]+', 'month' => '[0-9]+'])

@@ -6,31 +6,86 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\ListEmail; // Menggunakan model ListEmail yang baru
+use App\Models\ListEmail;
 
 class CalendarController extends Controller
 {
     /**
-     * Tampilkan kalender laporan produksi harian
+     * Tampilkan kalender laporan produksi harian.
      */
     public function index(Request $request, $year = null, $month = null)
     {
-        // Gunakan tanggal saat ini jika tahun dan bulan tidak diberikan
         $date = ($year && $month) ? Carbon::createFromDate($year, $month, 1) : Carbon::now();
         $year = $date->year;
         $month = $date->month;
 
+        // Ambil semua data kalender (data harian, struktur minggu, dan total) dari fungsi baru.
+        list($data, $weeks, $totals) = $this->getCalendarData($year, $month);
+
+        // Tentukan bulan sebelumnya dan berikutnya untuk navigasi.
+        $prevMonth = $date->copy()->subMonth();
+        $nextMonth = $date->copy()->addMonth();
+
+        $recipients = ListEmail::where('is_active', true)->get(['name', 'email']);
+
+        // Kirim semua data yang diperlukan ke view.
+        return view('calendar.index', [
+            'year'      => $year,
+            'month'     => $month,
+            'data'      => $data,
+            'weeks'     => $weeks,
+            'totals'    => $totals, // Variabel baru untuk rekapitulasi.
+            'prevYear'  => $prevMonth->year,
+            'prevMonth' => $prevMonth->month,
+            'nextYear'  => $nextMonth->year,
+            'nextMonth' => $nextMonth->month,
+            'recipients'=> $recipients,
+        ]);
+    }
+
+    /**
+     * Export PDF dari tampilan kalender.
+     */
+     public function exportPdf($year, $month)
+    {
+        // Ambil semua data (termasuk $weeks dan $totals) dari fungsi helper.
+        list($data, $weeks, $totals) = $this->getCalendarData($year, $month);
+
+        $date = Carbon::createFromDate($year, $month, 1);
+
+        // Kirim semua data yang dibutuhkan ke view 'exports.calendar-pdf'.
+        $pdf = Pdf::loadView('exports.calendar-pdf', [
+            'year'   => $year,
+            'month'  => $month,
+            'data'   => $data,
+            'weeks'  => $weeks, // Variabel penting ini sekarang dikirim
+            'totals' => $totals,
+        ])->setPaper('a4', 'landscape'); // Atur orientasi
+
+        // Nama file untuk diunduh.
+        $fileName = 'Laporan-Produksi-' . $date->isoFormat('MMMM-YYYY') . '.pdf';
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * FUNGSI BARU: Mengambil, memproses, dan menyatukan semua data untuk kalender.
+     */
+    private function getCalendarData($year, $month)
+    {
+        $date = Carbon::createFromDate($year, $month, 1);
         $startDate = $date->copy()->startOfMonth();
-        $endDate   = $date->copy()->endOfMonth();
+        $endDate = $date->copy()->endOfMonth();
 
-        // Ambil data produksi
-        $data = $this->getDailyData($startDate, $endDate);
+        // 1. Ambil data harian dari database.
+        $dailyData = $this->getDailyData($startDate, $endDate);
 
-        // Buat struktur data kalender
+        // 2. Buat struktur data kalender (array $weeks).
         $weeks = [];
         $currentDate = $startDate->copy()->startOfWeek(Carbon::SUNDAY);
+        $loopEndDate = $endDate->copy()->endOfWeek(Carbon::SATURDAY);
 
-        while ($currentDate->lte($endDate)) {
+        while ($currentDate->lte($loopEndDate)) {
             $week = [];
             for ($i = 0; $i < 7; $i++) {
                 if ($currentDate->month === $month) {
@@ -43,51 +98,28 @@ class CalendarController extends Controller
             $weeks[] = $week;
         }
 
-        // Tentukan bulan sebelumnya dan berikutnya
-        $prevMonth = $date->copy()->subMonth();
-        $nextMonth = $date->copy()->addMonth();
+        // 3. Hitung total bulanan dari data harian.
+        $totals = [
+            'totalGr'        => 0,
+            'totalWhfg'      => 0,
+            'totalValue'     => 0,
+            'totalSoldValue' => 0,
+        ];
 
-        // PERBAIKAN: Mengambil daftar penerima dari tabel 'list_emails' yang baru
-        $recipients = ListEmail::where('is_active', true)->get(['name', 'email']);
+        foreach ($dailyData as $item) {
+            $totals['totalGr']        += $item['gr'];
+            $totals['totalWhfg']      += $item['whfg'];
+            $totals['totalValue']     += $item['Total Value'];
+            $totals['totalSoldValue'] += $item['Sold Value'];
+        }
 
-        return view('calendar.index', [
-            'year'      => $year,
-            'month'     => $month,
-            'data'      => $data,
-            'weeks'     => $weeks,
-            'prevYear'  => $prevMonth->year,
-            'prevMonth' => $prevMonth->month,
-            'nextYear'  => $nextMonth->year,
-            'nextMonth' => $nextMonth->month,
-            'recipients'=> $recipients,
-        ]);
+        // 4. Kembalikan semua data yang sudah diproses.
+        return [$dailyData, $weeks, $totals];
     }
 
     /**
-     * Export PDF dari tampilan kalender
-     */
-    public function exportPdf($year, $month)
-    {
-        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $endDate   = $startDate->copy()->endOfMonth();
-
-        $data = $this->getDailyData($startDate, $endDate);
-
-        $pdf = Pdf::loadView('calendar.pdf', [
-            'year'           => $year,
-            'month'          => $month,
-            'data'           => $data,
-            'firstDayOfWeek' => $startDate->dayOfWeek,
-            'daysInMonth'    => $startDate->daysInMonth,
-            'prevMonth'      => $startDate->copy()->subMonth(),
-            'nextMonth'      => $startDate->copy()->addMonth(),
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download("Kalender-Produksi-{$year}-{$month}.pdf");
-    }
-
-    /**
-     * Ambil dan rekap data produksi harian dari tabel SAP
+     * Ambil dan rekap data produksi harian dari tabel SAP.
+     * (Fungsi ini tidak berubah, sudah bagus).
      */
     private function getDailyData($startDate, $endDate)
     {
@@ -110,10 +142,10 @@ class CalendarController extends Controller
 
             if (!isset($data[$tanggal])) {
                 $data[$tanggal] = [
-                    'gr'          => 0, // MENGE (Goods Receipt)
-                    'whfg'        => 0, // MENGEX (Finished Goods)
-                    'Total Value' => 0, // VALUS
-                    'Sold Value'  => 0, // VALUSX
+                    'gr'          => 0,
+                    'whfg'        => 0,
+                    'Total Value' => 0,
+                    'Sold Value'  => 0,
                 ];
             }
 

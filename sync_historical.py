@@ -207,7 +207,7 @@ def run_scheduler():
     logger.info("Untuk menghentikan, tekan Ctrl+C")
 
     # Jadwalkan sinkronisasi pada jam 03:00 dan 20:00
-    schedule.every().day.at("20:00").do(scheduled_sync)
+    schedule.every().day.at("08:10").do(scheduled_sync)
     schedule.every().day.at("05:00").do(scheduled_sync)
 
     # Tampilkan jadwal berikutnya
