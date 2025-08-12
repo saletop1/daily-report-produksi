@@ -105,13 +105,161 @@
                 </div>
             </div>
 
+            <div id="details-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg" id="modal-panel">
+                    <div class="flex items-center justify-between p-5 border-b"><h3 class="text-xl font-bold" id="modal-title"></h3><button id="modal-close-btn" class="text-gray-400 hover:text-gray-800"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+                    <div class="p-6"><div id="modal-body" class="space-y-4"></div></div>
+                    <div class="p-5 border-t bg-gray-50 rounded-b-2xl">
+                        <button id="send-email-btn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:bg-blue-300">
+                            <svg class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                            Kirim Notifikasi Email
+                        </button>
+                        <p id="email-status" class="text-xs text-center mt-2 text-gray-500"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="email-selection-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden items-center justify-center z-[60] p-4">
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-md" id="email-modal-panel">
+                    <div class="flex items-center justify-between p-5 border-b"><h3 class="text-xl font-bold">Pilih Penerima Notifikasi</h3><button id="cancel-send-btn" class="text-gray-400 hover:text-gray-800"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 mb-4">Pilih satu atau lebih alamat email.</p>
+                        <div id="recipient-list" class="space-y-3 max-h-60 overflow-y-auto border rounded-lg p-3"></div>
+                        <p id="recipient-error" class="text-xs text-red-500 mt-2 hidden">Pilih minimal satu penerima.</p>
+                    </div>
+                    <div class="p-5 border-t bg-gray-50 rounded-b-2xl flex justify-end space-x-3">
+                        <button id="cancel-send-btn-2" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Batal</button>
+                        <button id="confirm-send-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Kirim Sekarang</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
 
     {{-- Modal tidak perlu diubah, akan tetap berfungsi --}}
     @include('calendar.partials.modals')
 
     @push('scripts')
-        {{-- Skrip Anda tidak perlu diubah, akan tetap berfungsi --}}
+        <script>
+            const recipients = @json($recipients);
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // --- Variabel Global ---
+                let currentDetails = {};
+                let currentDateKey = '';
+
+                // --- Selektor Elemen ---
+                const detailsModal = document.getElementById('details-modal');
+                const detailsModalPanel = document.getElementById('modal-panel');
+                const detailsCloseBtn = document.getElementById('modal-close-btn');
+                const modalTitle = document.getElementById('modal-title');
+                const modalBody = document.getElementById('modal-body');
+                const dayCells = document.querySelectorAll('.data-day');
+                const sendEmailBtn = document.getElementById('send-email-btn');
+                const emailStatus = document.getElementById('email-status');
+
+                const emailSelectionModal = document.getElementById('email-selection-modal');
+                const emailModalPanel = document.getElementById('email-modal-panel');
+                const recipientList = document.getElementById('recipient-list');
+                const recipientError = document.getElementById('recipient-error');
+                const confirmSendBtn = document.getElementById('confirm-send-btn');
+                const cancelSendBtn = document.getElementById('cancel-send-btn');
+                const cancelSendBtn2 = document.getElementById('cancel-send-btn-2');
+
+                // --- Fungsi-fungsi ---
+                const openDetailsModal = (date, details, dateKey) => {
+                    currentDetails = details;
+                    currentDateKey = dateKey;
+                    modalTitle.textContent = `Detail Produksi - ${date}`;
+                    const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num || 0);
+                    modalBody.innerHTML = `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-gray-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Goods Receipt (GR) PRO</p><p class="text-2xl font-bold text-green-700">${formatNumber(details.gr)}</p></div>
+                            <div class="bg-gray-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Sold Value</p><p class="text-2xl font-bold text-green-700">$ ${formatNumber(details['Total Value'])}</p></div>
+                            <div class="bg-gray-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Transfer to WHFG</p><p class="text-2xl font-bold text-blue-700">${formatNumber(details.whfg)}</p></div>
+                            <div class="bg-gray-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Transfer Value</p><p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Sold Value'])}</p></div>
+                        </div>`;
+                    emailStatus.textContent = '';
+                    sendEmailBtn.disabled = false;
+                    detailsModal.style.display = 'flex';
+                    setTimeout(() => { detailsModal.classList.remove('opacity-0'); detailsModalPanel.classList.remove('scale-95'); }, 10);
+                };
+
+                const closeDetailsModal = () => {
+                    detailsModal.classList.add('opacity-0');
+                    detailsModalPanel.classList.add('scale-95');
+                    setTimeout(() => { detailsModal.style.display = 'none'; }, 300);
+                };
+
+                const openEmailSelectionModal = () => {
+                    recipientList.innerHTML = '';
+                    recipients.forEach(recipient => {
+                        const listItem = document.createElement('label');
+                        listItem.className = 'flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer';
+                        listItem.innerHTML = `<input type="checkbox" value="${recipient.email}" class="h-4 w-4 rounded"><span class="flex flex-col"><span class="font-medium">${recipient.name}</span><span class="text-xs text-gray-500">${recipient.email}</span></span>`;
+                        recipientList.appendChild(listItem);
+                    });
+                    emailSelectionModal.style.display = 'flex';
+                    setTimeout(() => { emailSelectionModal.classList.remove('opacity-0'); emailModalPanel.classList.remove('scale-95'); }, 10);
+                };
+
+                const closeEmailSelectionModal = () => {
+                    emailSelectionModal.classList.add('opacity-0');
+                    emailModalPanel.classList.add('scale-95');
+                    setTimeout(() => { emailSelectionModal.style.display = 'none'; }, 300);
+                };
+
+                // --- Event Listeners ---
+                dayCells.forEach(cell => {
+                    cell.addEventListener('click', function () {
+                        try {
+                            openDetailsModal(this.dataset.date, JSON.parse(this.dataset.details), this.dataset.dateKey);
+                        } catch (e) { console.error("Gagal parsing JSON:", e); }
+                    });
+                });
+
+                sendEmailBtn.addEventListener('click', openEmailSelectionModal);
+
+                confirmSendBtn.addEventListener('click', function() {
+                    const selectedEmails = Array.from(document.querySelectorAll('#recipient-list input:checked')).map(cb => cb.value);
+                    if (selectedEmails.length === 0) {
+                        recipientError.classList.remove('hidden'); return;
+                    }
+                    recipientError.classList.add('hidden');
+                    closeEmailSelectionModal();
+                    emailStatus.textContent = 'Mengirim notifikasi...';
+                    sendEmailBtn.disabled = true;
+
+                    fetch("{{ route('api.notification.send') }}", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                        body: JSON.stringify({date: currentDateKey, details: currentDetails, recipients: selectedEmails})
+                    })
+                    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                    .then(({ ok, data }) => {
+                        if (!ok) throw data;
+                        emailStatus.textContent = data.message || 'Notifikasi berhasil dikirim!';
+                        emailStatus.classList.add('text-green-500');
+                    })
+                    .catch(error => {
+                        emailStatus.textContent = `Error: ${error.message || 'Terjadi kesalahan jaringan.'}`;
+                        emailStatus.classList.add('text-red-500');
+                        sendEmailBtn.disabled = false;
+                    });
+                });
+
+                // Listeners untuk menutup modal
+                detailsCloseBtn.addEventListener('click', closeDetailsModal);
+                cancelSendBtn.addEventListener('click', closeEmailSelectionModal);
+                cancelSendBtn2.addEventListener('click', closeEmailSelectionModal);
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'Escape') {
+                        if (emailSelectionModal.style.display !== 'none') closeEmailSelectionModal();
+                        else if (detailsModal.style.display !== 'none') closeDetailsModal();
+                    }
+                });
+            });
+        </script>
     @endpush
 </x-app-layout>
