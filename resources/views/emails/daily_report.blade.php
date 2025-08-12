@@ -25,7 +25,7 @@
             <p>{{ \Carbon\Carbon::parse($reportData['date'])->isoFormat('dddd, D MMMM YYYY') }}</p>
         </div>
         <div class="content">
-            <p>Berikut adalah rincian laporan produksi untuk tanggal yang disebutkan di atas:</p>
+            <p>Berikut adalah rincian laporan produksi untuk periode yang disebutkan di atas:</p>
 
             <table class="report-table">
                 <thead>

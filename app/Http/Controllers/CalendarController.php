@@ -23,29 +23,34 @@ class CalendarController extends Controller
      * @return View
      */
     public function index(Request $request, ?int $year = null, ?int $month = null): View
-    {
-        $date = ($year && $month) ? Carbon::createFromDate($year, $month, 1) : Carbon::now();
-        $year = $date->year;
-        $month = $date->month;
+{
+    $date = ($year && $month) ? Carbon::createFromDate($year, $month, 1) : Carbon::now();
+    $year = $date->year;
+    $month = $date->month;
 
-        list($data, $weeks, $totals) = $this->getCalendarData($year, $month);
+    list($data, $weeks, $totals) = $this->getCalendarData($year, $month);
 
-        $prevMonth = $date->copy()->subMonth();
-        $nextMonth = $date->copy()->addMonth();
+    $prevMonth = $date->copy()->subMonth();
+    $nextMonth = $date->copy()->addMonth();
 
-        return view('calendar.index', [
-            'year'       => $year,
-            'month'      => $month,
-            'data'       => $data,
-            'weeks'      => $weeks,
-            'totals'     => $totals,
-            'prevYear'   => $prevMonth->year,
-            'prevMonth'  => $prevMonth->month,
-            'nextYear'   => $nextMonth->year,
-            'nextMonth'  => $nextMonth->month,
-            'recipients' => $this->getActiveRecipients(), // PERBAIKAN: Menggunakan helper
-        ]);
-    }
+    // BARIS PENTING INI DITAMBAHKAN
+    $runningText = $this->getWeeklyChangeAnalysis();
+
+    return view('calendar.index', [
+        'year'       => $year,
+        'month'      => $month,
+        'data'       => $data,
+        'weeks'      => $weeks,
+        'totals'     => $totals,
+        'prevYear'   => $prevMonth->year,
+        'prevMonth'  => $prevMonth->month,
+        'nextYear'   => $nextMonth->year,
+        'nextMonth'  => $nextMonth->month,
+        'recipients' => $this->getActiveRecipients(),
+        // DATA BARU INI DIKIRIM KE VIEW
+        'runningText' => $runningText,
+    ]);
+}
 
     /**
      * Mengekspor data kalender bulanan ke dalam format PDF.
@@ -101,6 +106,7 @@ class CalendarController extends Controller
      *
      * @param Carbon $date
      * @return array
+     *
      */
     public function getDailyDataForDate(Carbon $date): array
     {
@@ -113,7 +119,52 @@ class CalendarController extends Controller
      * @param int $year
      * @param int $month
      * @return array
+     * @return string
      */
+
+    private function getWeeklyChangeAnalysis(): string
+{
+    // Ambil data 8 hari terakhir untuk mendapatkan 7 perbandingan
+    $endDate = Carbon::today();
+    $startDate = $endDate->copy()->subDays(8);
+    $data = $this->getDailyData($startDate, $endDate);
+    ksort($data); // Pastikan urutan tanggal sudah benar
+
+    $dataPoints = array_values($data);
+    $dateKeys = array_keys($data);
+    $analysisText = [];
+
+    // Mulai dari indeks ke-1 untuk membandingkan dengan hari sebelumnya (indeks ke-0)
+    for ($i = 1; $i < count($dataPoints); $i++) {
+        $currentData = $dataPoints[$i];
+        $previousData = $dataPoints[$i - 1];
+        $currentDate = Carbon::parse($dateKeys[$i]);
+
+        $currentValue = $currentData['Total Value'] ?? 0;
+        $previousValue = $previousData['Total Value'] ?? 0;
+
+        // Hanya hitung jika ada data di hari sebelumnya untuk perbandingan
+        if ($previousValue > 0) {
+            $percentageChange = (($currentValue - $previousValue) / $previousValue) * 100;
+            // Format tanggal: Hari, Tanggal Bulan (contoh: Selasa, 12 Agustus)
+            $formattedDate = $currentDate->isoFormat('dddd, D MMMM');
+
+            if ($percentageChange >= 0.01) {
+                $analysisText[] = "<span style='color: #4ade80; font-weight: 600;'>▲</span> {$formattedDate}: Naik " . number_format($percentageChange, 2) . "%";
+            } elseif ($percentageChange <= -0.01) {
+                $analysisText[] = "<span style='color: #f87171; font-weight: 600;'>▼</span> {$formattedDate}: Turun " . number_format(abs($percentageChange), 2) . "%";
+            }
+        }
+    }
+
+    // Jika tidak ada data perbandingan, kembalikan teks default
+    if (empty($analysisText)) {
+        return 'Selamat datang di laporan hasil produksi harian PT. Kayu Mebel Indonesia.';
+    }
+
+    // Balik urutan array agar hari terbaru tampil lebih dulu, lalu gabungkan menjadi string
+    return implode(' &nbsp; • &nbsp; ', array_reverse($analysisText));
+}
     private function getCalendarData(int $year, int $month): array
     {
         $date = Carbon::createFromDate($year, $month, 1);
