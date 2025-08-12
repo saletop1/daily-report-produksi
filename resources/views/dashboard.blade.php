@@ -116,7 +116,7 @@
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                display: dailyPieData.labels.length <= 8, // Sembunyikan legenda jika terlalu banyak
+                                display: dailyPieData.labels.length <= 20, // Sembunyikan legenda jika terlalu banyak
                                 position: 'bottom',
                                 labels: { padding: 10, boxWidth: 12 }
                             },

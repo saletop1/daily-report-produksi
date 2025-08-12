@@ -286,7 +286,7 @@ if __name__ == '__main__':
     logger.info("=== MEMULAI APLIKASI SYNC HISTORICAL ===")
 
     # Opsi menjalankan aplikasi
-    mode = os.getenv('RUN_MODE', 'both')  # scheduler, flask, both
+    mode = os.getenv('RUN_MODE', 'manual')  # scheduler, flask, both
 
     if mode == 'scheduler':
         # Hanya jalankan scheduler
