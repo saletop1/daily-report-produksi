@@ -20,36 +20,22 @@ class DashboardController extends Controller
         ]);
 
         $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->startOfMonth();
-        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now()->endOfMonth();
+        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now();
 
-        // 2. Ambil dan proses data mentah dari database
+        // 2. Ambil dan proses data mentah dari database (hanya satu kali panggil)
         $dailyData = $this->getProcessedDailyData($startDate, $endDate);
 
-        // 3. Inisialisasi variabel untuk total dan data grafik
-        $totals = [
-            'totalGr'            => 0,
-            'totalWhfg'          => 0,
-            'totalTransferValue' => 0,
-            'totalSoldValue'     => 0,
-        ];
-
-        $lineChart = [
-            'labels'   => [],
-            'grData'   => [],
-            'whfgData' => [],
-        ];
-
-        $dailyPieChart = [
-            'labels' => [],
-            'data'   => [],
-        ];
+        // 3. Inisialisasi variabel untuk semua data yang akan dikirim
+        $totals = ['totalGr' => 0, 'totalWhfg' => 0, 'totalTransferValue' => 0, 'totalSoldValue' => 0];
+        $lineChart = ['labels' => [], 'grData' => [], 'whfgData' => []];
+        $dailyPieChart = ['labels' => [], 'data' => []];
 
         // 4. Proses data harian untuk total, grafik garis, dan grafik pai
         $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->copy()->addDay());
         foreach ($period as $date) {
             $dateKey = $date->format('Y-m-d');
 
-            // Siapkan data untuk grafik garis (label untuk setiap hari dalam rentang)
+            // Siapkan label untuk grafik garis (menampilkan setiap hari dalam rentang)
             $lineChart['labels'][] = $date->format('d M');
 
             if (isset($dailyData[$dateKey])) {
@@ -65,11 +51,11 @@ class DashboardController extends Controller
                 $lineChart['grData'][]   = $dayData['gr'];
                 $lineChart['whfgData'][] = $dayData['whfg'];
 
-                // Tambahkan data ke grafik pai harian
+                // Tambahkan data ke grafik pai harian (hanya untuk hari yang ada data)
                 $dailyPieChart['labels'][] = $date->format('d M');
-                $dailyPieChart['data'][]   = $dayData['sold_value']; // Menggunakan 'sold_value' untuk pie chart
+                $dailyPieChart['data'][]   = $dayData['sold_value'];
             } else {
-                // Jika tidak ada data pada hari itu, isi dengan 0
+                // Jika tidak ada data pada hari itu, isi data grafik garis dengan 0
                 $lineChart['grData'][]   = 0;
                 $lineChart['whfgData'][] = 0;
             }
@@ -84,7 +70,7 @@ class DashboardController extends Controller
             'chartLabels'        => json_encode($lineChart['labels']),
             'chartGrData'        => json_encode($lineChart['grData']),
             'chartWhfgData'      => json_encode($lineChart['whfgData']),
-            'dailyPieData'       => json_encode($dailyPieChart), // Data baru untuk pie chart
+            'dailyPieData'       => json_encode($dailyPieChart), // Data untuk pie chart
             'startDate'          => $startDate->format('Y-m-d'),
             'endDate'            => $endDate->format('Y-m-d'),
         ]);
@@ -92,10 +78,6 @@ class DashboardController extends Controller
 
     /**
      * Helper method untuk mengambil dan memproses data dari database.
-     *
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return array
      */
     private function getProcessedDailyData(Carbon $startDate, Carbon $endDate): array
     {
