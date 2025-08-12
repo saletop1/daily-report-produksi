@@ -36,7 +36,7 @@ class CheckLowValueProduction extends Command
 
         try {
             // Ambil ambang batas dari file config untuk fleksibilitas
-            $lowValueThreshold = config('production.low_value_threshold', 20000);
+            $lowValueThreshold = config('production.low_value_threshold', 40000);
 
             $dateToCheck = Carbon::yesterday();
             $dailyData = $controller->getDailyDataForDate($dateToCheck);
