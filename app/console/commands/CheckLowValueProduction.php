@@ -25,7 +25,7 @@ class CheckLowValueProduction extends Command
      *
      * @var string
      */
-    protected $description = 'Cek data produksi harian dan kirim notifikasi jika nilainya rendah';
+    protected $description = 'Cek data produksi harian per plant dan kirim notifikasi jika nilainya rendah';
 
     /**
      * Execute the console command.
@@ -34,51 +34,69 @@ class CheckLowValueProduction extends Command
     {
         $this->info('Memulai pengecekan data produksi kemarin...');
 
-        try {
-            // Ambil ambang batas dari file config untuk fleksibilitas
-            $lowValueThreshold = config('production.low_value_threshold', 40000);
+        // MODIFIED: Define thresholds per plant in a configuration array
+        $plantsConfig = [
+            ['id' => '3000', 'threshold' => 50000],
+            ['id' => '2000', 'threshold' => 2000],
+        ];
 
-            $dateToCheck = Carbon::yesterday();
-            $dailyData = $controller->getDailyDataForDate($dateToCheck);
+        $dateToCheck = Carbon::yesterday();
+        $this->line("Tanggal yang dicek: " . $dateToCheck->toDateString());
 
-            $lowValueData = array_filter($dailyData, function ($details) use ($lowValueThreshold) {
-                return isset($details['Sold Value']) && $details['Sold Value'] <= $lowValueThreshold;
-            });
+        $supervisor = ListEmail::where('role', 'supervisor')->where('is_active', true)->first();
 
-            // Jika tidak ada data bernilai rendah, hentikan proses dengan status sukses.
-            if (empty($lowValueData)) {
-                $this->info('Tidak ada data produksi bernilai rendah yang ditemukan.');
-                return self::SUCCESS;
-            }
-
-            // Jika ada data, lanjutkan proses notifikasi.
-            $this->warn('Ditemukan data bernilai rendah. Mengirim peringatan ke supervisor...');
-            $supervisor = ListEmail::where('role', 'supervisor')->where('is_active', true)->first();
-
-            if (!$supervisor) {
-                $this->error('KRITIS: Tidak ada supervisor aktif yang ditemukan di database untuk dikirimi notifikasi.');
-                Log::critical('Tidak ada supervisor aktif untuk notifikasi nilai rendah.');
-                return self::FAILURE;
-            }
-
-            // Bungkus pengiriman email dengan try-catch untuk menangani kegagalan
-            try {
-                Mail::to($supervisor->email)->send(new SupervisorLowValueAlert($lowValueData));
-                $this->info('Peringatan berhasil dikirim ke supervisor: ' . $supervisor->email);
-            } catch (Throwable $e) {
-                $this->error('KRITIS: Gagal mengirim email peringatan ke supervisor. Error: ' . $e->getMessage());
-                Log::error('Kegagalan pengiriman email supervisor: ' . $e->getMessage());
-                return self::FAILURE;
-            }
-
-        } catch (Throwable $e) {
-            // Menangani error jika pengambilan data dari database gagal
-            $this->error('KRITIS: Terjadi error saat mengambil data produksi. Error: ' . $e->getMessage());
-            Log::error('Kegagalan mengambil data di CheckLowValueProduction: ' . $e->getMessage());
+        if (!$supervisor) {
+            $this->error('KRITIS: Tidak ada supervisor aktif yang ditemukan di database.');
+            Log::critical('Tidak ada supervisor aktif untuk notifikasi nilai rendah.');
             return self::FAILURE;
         }
 
-        // Kembalikan status sukses jika semua berjalan lancar
+        // MODIFIED: Loop through the configuration array
+        foreach ($plantsConfig as $config) {
+            $plant = $config['id'];
+            $lowValueThreshold = $config['threshold'];
+
+            $this->info("--- Mengecek Plant: {$plant} (Ambang Batas: <= " . number_format($lowValueThreshold) . ") ---");
+
+            try {
+                $nestedDailyData = $controller->getDailyDataForDate($dateToCheck, $plant);
+                $dailyData = !empty($nestedDailyData) ? reset($nestedDailyData) : null;
+
+                if ($dailyData) {
+                    $dailyData['date'] = $dateToCheck->toDateString();
+                }
+
+                if (empty($dailyData) || !isset($dailyData['Total Value'])) {
+                    $this->line("Tidak ada data produksi ('Total Value') ditemukan untuk Plant {$plant}.");
+                    continue;
+                }
+
+                $currentValue = $dailyData['Total Value'];
+                $this->line("Nilai produksi saat ini: " . number_format($currentValue, 2));
+
+                // Logika pengecekan nilai rendah menggunakan threshold spesifik plant
+                if ($currentValue <= $lowValueThreshold) {
+                    $this->warn("DITEMUKAN: Nilai produksi di bawah atau sama dengan ambang batas. Mengirim peringatan...");
+
+                    try {
+                        Mail::to($supervisor->email)->send(new SupervisorLowValueAlert($dailyData, $plant));
+                        $this->info("Peringatan untuk Plant {$plant} berhasil dikirim ke: " . $supervisor->email);
+                    } catch (Throwable $e) {
+                        $this->error("KRITIS: Gagal mengirim email untuk Plant {$plant}. Error: " . $e->getMessage());
+                        Log::error("Kegagalan email supervisor untuk Plant {$plant}: " . $e->getMessage());
+                    }
+                } else {
+                    $this->info("AMAN: Nilai produksi berada di atas ambang batas.");
+                }
+
+            } catch (Throwable $e) {
+                $this->error("KRITIS: Terjadi error saat memproses Plant {$plant}. Error: " . $e->getMessage());
+                Log::error("Kegagalan proses di CheckLowValueProduction untuk Plant {$plant}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        $this->info('Pengecekan selesai.');
         return self::SUCCESS;
     }
 }

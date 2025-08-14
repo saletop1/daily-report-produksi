@@ -25,18 +25,24 @@
         }
 
         /* Header Laporan */
-        .report-header {
-            text-align: center;
+        .report-header-table {
+            width: 100%;
             margin-bottom: 25px;
             border-bottom: 2px solid #e2e8f0;
             padding-bottom: 15px;
         }
-        .report-header h1 {
+        .report-header-table .logo {
+            width: 60px;
+        }
+        .report-header-table .title-container {
+            text-align: center;
+        }
+        .report-header-table h1 {
             font-size: 24px;
             margin: 0;
             color: #1a202c;
         }
-        .report-header p {
+        .report-header-table p {
             font-size: 14px;
             margin: 5px 0 0;
             color: #718096;
@@ -135,11 +141,19 @@
 <body>
     <div class="container">
         {{-- Header --}}
-        <div class="report-header">
-            <h1>Laporan Produksi Bulanan</h1>
-            <p>PT. Kayu Mebel Indonesia</p>
-            <p style="font-size: 18px; font-weight: bold; color: #2d3748;">{{ \Carbon\Carbon::create($year, $month)->isoFormat('MMMM YYYY') }}</p>
-        </div>
+        <table class="report-header-table">
+            <tr>
+                <td class="logo">
+                    {{-- MODIFIED: Added the logo with an absolute path --}}
+                    <img src="{{ public_path('images/KMI.png') }}" alt="KMI Logo" style="width: 50px; height: auto;">
+                </td>
+                <td class="title-container">
+                    <h1>Laporan Produksi Bulanan</h1>
+                    <p>PT. Kayu Mebel Indonesia</p>
+                    <p style="font-size: 18px; font-weight: bold; color: #2d3748;">{{ \Carbon\Carbon::create($year, $month)->isoFormat('MMMM YYYY') }}</p>
+                </td>
+            </tr>
+        </table>
 
         {{-- Rekapitulasi --}}
         <h2 style="font-size: 16px; margin-bottom: 10px; color: #2d3748;">Rekapitulasi Bulan Ini</h2>
@@ -150,7 +164,7 @@
                     <td class="total-gr">{{ number_format($totals['totalGr'], 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td>Total Sold Value</td>
+                    <td>Total Value</td>
                     <td class="total-gr">$ {{ number_format($totals['totalValue'], 2, ',', '.') }}</td>
                 </tr>
                 <tr>
@@ -158,7 +172,7 @@
                     <td class="total-whfg">{{ number_format($totals['totalWhfg'], 0, ',', '.') }}</td>
                 </tr>
                 <tr>
-                    <td>Total Transfer Value</td>
+                    <td>Total Sold Value</td>
                     <td class="total-whfg">$ {{ number_format($totals['totalSoldValue'], 2, ',', '.') }}</td>
                 </tr>
             </tbody>

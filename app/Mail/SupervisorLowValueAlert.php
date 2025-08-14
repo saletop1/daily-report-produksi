@@ -4,47 +4,47 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\URL; // PERBAIKAN 1: Menambahkan 'use' untuk URL facade
+use Illuminate\Support\Facades\URL;
+use Carbon\Carbon;
 
 class SupervisorLowValueAlert extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $alertData;
-    public $signedUrl;
+    public array $alertData;
+    public string $plant;
+    public string $signedUrl;
 
-    public function __construct($alertData)
+    /**
+     * Create a new message instance.
+     */
+    public function __construct(array $dailyData, string $plant)
     {
-        $this->alertData = $alertData;
+        $this->alertData = $dailyData;
+        $this->plant = $plant;
 
-        // Membuat URL aman yang hanya valid selama 48 jam
-        $date = array_key_first($alertData);
-        $this->signedUrl = URL::temporarySignedRoute(
-            'supervisor.notify-team', now()->addHours(48), ['date' => $date]
-        );
-    }
+        $this->signedUrl = 'http://daily-report-gr.kmifilebox.com/calendar';
 
-    public function envelope(): Envelope
-    {
-        return new Envelope(subject: 'PERINGATAN: Produksi Bernilai Rendah Terdeteksi');
-    }
-
-    public function content(): Content
-    {
-        return new Content(view: 'emails.supervisor-alert');
+    //     // Buat signed URL untuk tombol "Beritahu Tim"
+    //     $this->signedUrl = URL::temporarySignedRoute(
+    //         'http://daily-report-gr.kmifilebox.com', // Pastikan nama rute ini benar
+    //         now()->addHours(24),
+    //         [
+    //             'plant' => $this->plant,
+    //             'date' => $this->alertData['date']
+    //         ]
+    //     );
     }
 
     /**
-     * Get the attachments for the message.
+     * Build the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return $this
      */
-    // PERBAIKAN 2: Method attachments() sekarang berada di dalam class
-    public function attachments(): array
+    public function build()
     {
-        return [];
+        return $this->subject('Peringatan: Nilai Produksi Rendah untuk Plant ' . $this->plant)
+                    ->view('emails.supervisor-alert'); // Arahkan ke view yang sudah diperbaiki
     }
-} // PERBAIKAN 3: Kurung kurawal penutup class dipindahkan ke sini
+}

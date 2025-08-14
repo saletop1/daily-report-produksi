@@ -5,107 +5,119 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     /**
-     * Menampilkan halaman dasbor dengan analisis data.
+     * Menampilkan halaman utama dashboard analisis produksi.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        // 1. Validasi dan tentukan rentang tanggal
-        $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date'   => 'nullable|date|after_or_equal:start_date',
-        ]);
+        // Tentukan rentang tanggal dari request, atau default ke 7 hari terakhir
+        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::today();
+        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : $endDate->copy()->subDays(7);
 
-        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : Carbon::now()->startOfMonth();
-        $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::now();
+        // Ambil data yang sudah diproses untuk kedua plant
+        $plant3000Data = $this->getProductionDataForPlant('3000', $startDate, $endDate);
+        $plant2000Data = $this->getProductionDataForPlant('2000', $startDate, $endDate);
 
-        // 2. Ambil dan proses data mentah dari database (hanya satu kali panggil)
-        $dailyData = $this->getProcessedDailyData($startDate, $endDate);
+        // Siapkan data untuk grafik tren gabungan
+        $trendData = $this->prepareTrendChartData([
+            'Plant SMG' => $plant3000Data['daily'],
+            'Plant SBY' => $plant2000Data['daily']
+        ], $startDate, $endDate);
 
-        // 3. Inisialisasi variabel untuk semua data yang akan dikirim
-        $totals = ['totalGr' => 0, 'totalWhfg' => 0, 'totalTransferValue' => 0, 'totalSoldValue' => 0];
-        $lineChart = ['labels' => [], 'grData' => [], 'whfgData' => []];
-        $dailyPieChart = ['labels' => [], 'data' => []];
+        // Siapkan data untuk diagram pai kontribusi nilai
+        $pieData = [
+            'labels' => ['Plant SMG', 'Plant SBY'],
+            'data' => [
+                $plant3000Data['totals']['totalValue'],
+                $plant2000Data['totals']['totalValue']
+            ]
+        ];
 
-        // 4. Proses data harian untuk total, grafik garis, dan grafik pai
-        $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->copy()->addDay());
-        foreach ($period as $date) {
-            $dateKey = $date->format('Y-m-d');
-
-            // Siapkan label untuk grafik garis (menampilkan setiap hari dalam rentang)
-            $lineChart['labels'][] = $date->format('d M');
-
-            if (isset($dailyData[$dateKey])) {
-                $dayData = $dailyData[$dateKey];
-
-                // Hitung total keseluruhan
-                $totals['totalGr']            += $dayData['gr'];
-                $totals['totalWhfg']          += $dayData['whfg'];
-                $totals['totalTransferValue'] += $dayData['transfer_value'];
-                $totals['totalSoldValue']     += $dayData['sold_value'];
-
-                // Tambahkan data ke grafik garis
-                $lineChart['grData'][]   = $dayData['gr'];
-                $lineChart['whfgData'][] = $dayData['whfg'];
-
-                // Tambahkan data ke grafik pai harian (hanya untuk hari yang ada data)
-                $dailyPieChart['labels'][] = $date->format('d M');
-                $dailyPieChart['data'][]   = $dayData['sold_value'];
-            } else {
-                // Jika tidak ada data pada hari itu, isi data grafik garis dengan 0
-                $lineChart['grData'][]   = 0;
-                $lineChart['whfgData'][] = 0;
-            }
-        }
-
-        // 5. Kirim semua data yang sudah dianalisis ke view
-        return view('dashboard', [
-            'totalGr'            => $totals['totalGr'],
-            'totalWhfg'          => $totals['totalWhfg'],
-            'totalTransferValue' => $totals['totalTransferValue'],
-            'totalSoldValue'     => $totals['totalSoldValue'],
-            'chartLabels'        => json_encode($lineChart['labels']),
-            'chartGrData'        => json_encode($lineChart['grData']),
-            'chartWhfgData'      => json_encode($lineChart['whfgData']),
-            'dailyPieData'       => json_encode($dailyPieChart), // Data untuk pie chart
-            'startDate'          => $startDate->format('Y-m-d'),
-            'endDate'            => $endDate->format('Y-m-d'),
+        return view('dashboard.index', [
+            'startDate' => $startDate->toDateString(),
+            'endDate' => $endDate->toDateString(),
+            'plant3000' => $plant3000Data,
+            'plant2000' => $plant2000Data,
+            'trendChartData' => json_encode($trendData),
+            'pieChartData' => json_encode($pieData),
         ]);
     }
 
     /**
-     * Helper method untuk mengambil dan memproses data dari database.
+     * Mengambil dan memproses data produksi untuk satu plant dalam rentang tanggal.
      */
-    private function getProcessedDailyData(Carbon $startDate, Carbon $endDate): array
+    private function getProductionDataForPlant(string $plantId, Carbon $startDate, Carbon $endDate): array
     {
-        $productionData = DB::table('sap_yppr009_data')
-            ->select('BUDAT_MKPF', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX')
-            ->whereBetween('BUDAT_MKPF', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->orderBy('BUDAT_MKPF', 'asc')
+        $query = DB::table('sap_yppr009_data')
+            ->select(
+                DB::raw('DATE(BUDAT_MKPF) as production_date'),
+                DB::raw('SUM(MENGE) as total_gr'),
+                DB::raw('SUM(MENGEX) as total_whfg'),
+                DB::raw('SUM(VALUS) as total_value'),
+                DB::raw('SUM(VALUSX) as total_sold_value')
+            )
+            ->where('WERKS', $plantId)
+            ->whereBetween('BUDAT_MKPF', [$startDate->toDateString(), $endDate->toDateString()])
+            ->groupBy('production_date')
+            ->orderBy('production_date', 'asc')
             ->get();
 
         $dailyData = [];
-        foreach ($productionData as $item) {
-            $tanggal = Carbon::parse($item->BUDAT_MKPF)->format('Y-m-d');
-
-            if (!isset($dailyData[$tanggal])) {
-                $dailyData[$tanggal] = [
-                    'gr'             => 0,
-                    'whfg'           => 0,
-                    'transfer_value' => 0,
-                    'sold_value'     => 0,
-                ];
-            }
-
-            $dailyData[$tanggal]['gr']             += floatval($item->MENGE ?? 0);
-            $dailyData[$tanggal]['whfg']           += floatval($item->MENGEX ?? 0);
-            $dailyData[$tanggal]['transfer_value'] += floatval($item->VALUS ?? 0);
-            $dailyData[$tanggal]['sold_value']     += floatval($item->VALUSX ?? 0);
+        foreach ($query as $row) {
+            $dailyData[$row->production_date] = [
+                'gr' => (float) $row->total_gr,
+                'whfg' => (float) $row->total_whfg,
+            ];
         }
 
-        return $dailyData;
+        $totals = [
+            'totalGr' => $query->sum('total_gr'),
+            'totalWhfg' => $query->sum('total_whfg'),
+            'totalValue' => $query->sum('total_value'),
+            'totalSoldValue' => $query->sum('total_sold_value'),
+        ];
+
+        return ['daily' => $dailyData, 'totals' => $totals];
+    }
+
+    /**
+     * Menyiapkan data yang diformat untuk grafik tren garis (Chart.js).
+     */
+    private function prepareTrendChartData(array $allPlantsData, Carbon $startDate, Carbon $endDate): array
+    {
+        $labels = [];
+        $datasets = [];
+
+        // Buat label tanggal untuk seluruh rentang
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+            $labels[] = $date->format('d M');
+        }
+
+        $colors = ['#3b82f6', '#10b981']; // Biru untuk Plant 3000, Hijau untuk Plant 2000
+        $i = 0;
+
+        foreach ($allPlantsData as $plantName => $dailyData) {
+            $grData = [];
+            foreach ($labels as $label) {
+                $dateKey = Carbon::createFromFormat('d M', $label, 'Asia/Jakarta')->format('Y-m-d');
+                $grData[] = $dailyData[$dateKey]['gr'] ?? 0;
+            }
+
+            $datasets[] = [
+                'label' => $plantName . ' (GR)',
+                'data' => $grData,
+                'borderColor' => $colors[$i],
+                'backgroundColor' => $colors[$i] . '33', // Transparan
+                'fill' => true,
+                'tension' => 0.3,
+            ];
+            $i++;
+        }
+
+        return ['labels' => $labels, 'datasets' => $datasets];
     }
 }
