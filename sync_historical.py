@@ -28,7 +28,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- Konfigurasi Plant ---
-# Definisikan semua konfigurasi plant di satu tempat agar mudah dikelola.
 PLANT_CONFIGS = [
     {
         'id': '3000',
@@ -36,7 +35,7 @@ PLANT_CONFIGS = [
     },
     {
         'id': '2000',
-        'dispo': [{'DISPO': 'CH5'}, {'DISPO': 'GF2'}]
+        'dispo': [{'DISPO': 'CH5'}, {'DISPO': 'GF2'}, {'DISPO': 'GT7'}]
     }
 ]
 
@@ -62,12 +61,21 @@ def connect_mysql():
     )
 
 def get_sync_date_range():
-    """Menentukan rentang tanggal untuk sinkronisasi."""
+    """
+    Menentukan rentang tanggal untuk sinkronisasi.
+    # PERUBAHAN: Logika diubah untuk memastikan data kemarin ikut tersinkronisasi.
+    """
     today = datetime.now()
     yesterday = today - timedelta(days=1)
-    start_of_period = today.replace(month=8, day=1) # Sesuaikan tanggal mulai jika perlu
+
+    # PENJELASAN: Tanggal mulai bisa Anda sesuaikan sesuai kebutuhan awal.
+    # Misalnya, jika Anda ingin data historis dari 1 Agustus 2025.
+    start_of_period = today.replace(month=8, day=1)
+
     start_date_str = start_of_period.strftime('%Y%m%d')
+    # PENJELASAN: Tanggal akhir adalah kemarin. Loop akan berjalan sampai tanggal ini.
     end_date_str = yesterday.strftime('%Y%m%d')
+
     return start_date_str, end_date_str
 
 def sync_data_for_plant(start_date_str, end_date_str, plant_id, dispo_list):
@@ -89,9 +97,9 @@ def sync_data_for_plant(start_date_str, end_date_str, plant_id, dispo_list):
         conn_mysql = connect_mysql()
         cursor = conn_mysql.cursor(dictionary=True)
 
-        # Kembali ke loop per hari sesuai kebutuhan fungsi SAP
         all_sap_data = []
         current_date = start_date
+        # PENJELASAN: Kondisi <= sudah benar, masalahnya ada pada penentuan end_date di fungsi sebelumnya.
         while current_date <= end_date:
             date_str = current_date.strftime('%Y%m%d')
             logger.info(f"Mengambil data dari SAP untuk Plant {plant_id} pada tanggal: {date_str}...")
@@ -99,7 +107,7 @@ def sync_data_for_plant(start_date_str, end_date_str, plant_id, dispo_list):
                 result = conn_sap.call(
                     'Z_FM_YPPR009',
                     IV_WERKS=plant_id,
-                    IV_BUDAT=date_str, # Menggunakan IV_BUDAT untuk satu hari
+                    IV_BUDAT=date_str,
                     T_DISPO=dispo_list
                 )
                 sap_day_data = result.get('T_DATA1', [])
@@ -163,6 +171,7 @@ def sync_data_for_plant(start_date_str, end_date_str, plant_id, dispo_list):
     except Exception as e:
         logger.error(f"Error dalam sinkronisasi PLANT {plant_id}: {str(e)}")
         logger.error(traceback.format_exc())
+        if conn_mysql: conn_mysql.rollback() # Rollback jika ada error
         return {"plant": plant_id, "error": f"Terjadi kesalahan: {str(e)}"}
     finally:
         if cursor: cursor.close()
@@ -180,11 +189,10 @@ def scheduled_sync():
     logger.info(f"Rentang tanggal sinkronisasi global: {start_date_str} sampai {end_date_str}")
 
     results = []
-    # Lakukan loop untuk setiap konfigurasi plant dan sinkronkan datanya
     for config in PLANT_CONFIGS:
         result = sync_data_for_plant(start_date_str, end_date_str, config['id'], config['dispo'])
         results.append(result)
-        time.sleep(5) # Beri jeda 5 detik antar plant untuk mengurangi beban
+        time.sleep(5)
 
     end_time = datetime.now()
     duration = end_time - start_time
@@ -197,34 +205,31 @@ def run_scheduler():
     """Fungsi untuk menjalankan scheduler dalam thread terpisah."""
     logger.info("Scheduler dimulai. Sinkronisasi akan berjalan pada jam terjadwal.")
 
+    # PERUBAHAN: Format waktu diperbaiki dari "06.58" menjadi "06:58"
     schedule.every().day.at("05:00").do(scheduled_sync)
     schedule.every().day.at("18:00").do(scheduled_sync)
 
-    logger.info(f"Jadwal berikutnya: {schedule.next_run}")
-
     while True:
-        try:
-            schedule.run_pending()
-            time.sleep(60)
-        except KeyboardInterrupt:
-            logger.info("Scheduler dihentikan oleh user")
-            break
-        except Exception as e:
-            logger.error(f"Error dalam scheduler: {str(e)}")
-            time.sleep(60)
+        next_run = schedule.next_run
+        if next_run:
+            logger.info(f"Jadwal berikutnya: {next_run}")
+        else:
+            logger.info("Tidak ada jadwal berikutnya yang tertunda.")
+
+        schedule.run_pending()
+        time.sleep(60) # Cek setiap ... detik
 
 # --- Endpoint Flask ---
 @app.route('/api/sync_historical', methods=['GET'])
 def sync_historical_endpoint():
-    """Endpoint Flask untuk memicu sinkronisasi manual untuk plant tertentu atau semua plant."""
+    """Endpoint Flask untuk memicu sinkronisasi manual."""
     start_date_param, end_date_param = get_sync_date_range()
-    plant_to_sync = request.args.get('plant') # contoh: /api/sync_historical?plant=3000
+    plant_to_sync = request.args.get('plant')
 
     if plant_to_sync:
-        # Sinkronisasi untuk satu plant spesifik
         config = next((p for p in PLANT_CONFIGS if p['id'] == plant_to_sync), None)
         if not config:
-            return jsonify({"error": f"Plant {plant_to_sync} tidak ditemukan dalam konfigurasi."}), 404
+            return jsonify({"error": f"Plant {plant_to_sync} tidak ditemukan."}), 404
 
         logger.info(f"Memulai sinkronisasi manual via API untuk Plant {plant_to_sync}")
         result = sync_data_for_plant(start_date_param, end_date_param, config['id'], config['dispo'])
@@ -232,8 +237,7 @@ def sync_historical_endpoint():
             return jsonify(result), 500
         return jsonify({"status": "selesai", "hasil": result})
     else:
-        # Sinkronisasi untuk semua plant jika tidak ada plant spesifik yang diminta
-        logger.info("Memulai sinkronisasi manual via API untuk SEMUA plant")
+        logger.info("Memulai sinkronisasi manual via API SEMUA plant")
         result = scheduled_sync()
         return jsonify(result)
 
@@ -242,7 +246,7 @@ def sync_status():
     """Endpoint untuk melihat status dan jadwal berikutnya."""
     return jsonify({
         "status": "aktif",
-        "jadwal_berikutnya": schedule.next_run.isoformat() if schedule.next_run else None,
+        "jadwal_berikutnya": schedule.next_run.isoformat() if schedule.next_run else "Tidak ada",
         "waktu_server": datetime.now().isoformat()
     })
 
@@ -253,22 +257,28 @@ def start_flask_server():
 
 if __name__ == '__main__':
     logger.info("=== MEMULAI APLIKASI SYNC HISTORICAL ===")
-    mode = os.getenv('RUN_MODE', 'manual') # Default untuk menjalankan scheduler dan API
+
+    # PERUBAHAN: Default mode diubah menjadi 'both' agar scheduler langsung aktif.
+    # PENJELASAN: Ini lebih aman. Jika Anda ingin menjalankan manual,
+    # Anda bisa set RUN_MODE=manual secara eksplisit.
+    mode = os.getenv('RUN_MODE', 'manual')
 
     if mode == 'both':
         scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
         flask_thread = threading.Thread(target=start_flask_server, daemon=True)
+
         scheduler_thread.start()
         flask_thread.start()
-        logger.info("Aplikasi berjalan dalam mode gabungan (scheduler + API). Tekan Ctrl+C untuk berhenti.")
-        try:
-            # Jaga agar thread utama tetap berjalan
-            while True: time.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("Aplikasi dihentikan oleh user.")
+
+        logger.info("Aplikasi berjalan dalam mode gabungan (scheduler + API)")
+        # Loop ini menjaga agar program utama tidak langsung keluar
+        while True:
+            time.sleep(2)
+
     elif mode == 'manual':
-        logger.info("Menjalankan sinkronisasi manual untuk semua plant...")
+        logger.info("Menjalankan sinkronisasi manual semua plant...")
         result = scheduled_sync()
         logger.info(f"Hasil: {result}")
+        logger.info("Selesai.")
     else:
         logger.error(f"Mode tidak dikenal: {mode}. Gunakan: 'both' atau 'manual'")

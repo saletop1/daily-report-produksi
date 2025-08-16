@@ -7,7 +7,7 @@
 
         /* Transisi untuk modal */
         .modal, .modal-panel {
-            transition: all 0.3s ease-in-out;
+            transition: all 0.4s ease-in-out;
         }
     </style>
 

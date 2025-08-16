@@ -45,31 +45,21 @@
                 <div class="flex justify-between h-16">
 
                     <!-- Bagian Kiri: Logo dan Link Navigasi Utama -->
-                    <div class="flex items-center">
-                        <!-- Logo -->
-                        <div class="shrink-0 flex items-center">
-                            <a href="{{ route('dashboard') }}">
-                                <img class="h-10 w-auto" src="{{ asset('images/KMI.png') }}" alt="KMI Logo">
-                            </a>
-                        </div>
+                    <div class="hidden sm:flex space-x-8 -my-px ml-10">
+                        <!-- Link Dashboard -->
+                        <a href="{{ route('dashboard') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->routeIs('dashboard') ? 'nav-link-active' : 'nav-link-inactive' }}">
+                            Dashboard
+                        </a>
 
-                        <!-- Link Navigasi -->
-                        <div class="hidden sm:flex space-x-8 -my-px ml-10">
-                            <!-- Link Dashboard -->
-                            <a href="{{ route('dashboard') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->routeIs('dashboard') ? 'nav-link-active' : 'nav-link-inactive' }}">
-                                Dashboard
-                            </a>
+                        <!-- Link Plant Semarang (Default) -->
+                        <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->is('calendar/3000*') || request()->is('calendar') ? 'nav-link-active' : 'nav-link-inactive' }}">
+                            Plant Semarang
+                        </a>
 
-                            <!-- Link Plant Semarang (Default) -->
-                            <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->routeIs('calendar.index') && (request()->route('plant') == '3000' || request()->route('plant') == null) ? 'nav-link-active' : 'nav-link-inactive' }}">
-                                Plant Semarang
-                            </a>
-
-                            <!-- Link Plant Surabaya -->
-                            <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->routeIs('calendar.index') && request()->route('plant') == '2000' ? 'nav-link-active' : 'nav-link-inactive' }}">
-                                Plant Surabaya
-                            </a>
-                        </div>
+                        <!-- Link Plant Surabaya -->
+                        <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->is('calendar/2000*') ? 'nav-link-active' : 'nav-link-inactive' }}">
+                            Plant Surabaya
+                        </a>
                     </div>
 
                     <!-- Bagian Kanan: Info Pengguna dan Logout -->
@@ -109,11 +99,11 @@
                         <i class="fa-solid fa-chart-line mb-1"></i>
                         Dashboard
                     </a>
-                    <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="flex flex-col items-center text-xs transition {{ request()->route('plant') == '3000' ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
+                    <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="flex flex-col items-center text-xs transition {{ request()->is('calendar/3000*') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
                         <i class="fa-solid fa-calendar-days mb-1"></i>
                         Plant 3000
                     </a>
-                    <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="flex flex-col items-center text-xs transition {{ request()->route('plant') == '2000' ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
+                    <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="flex flex-col items-center text-xs transition {{ request()->is('calendar/2000*') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
                         <i class="fa-solid fa-calendar-days mb-1"></i>
                         Plant 2000
                     </a>

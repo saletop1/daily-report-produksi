@@ -17,7 +17,6 @@ class CalendarController extends Controller
 {
     /**
      * Menampilkan halaman utama kalender produksi untuk plant tertentu.
-     * MODIFIED: Added $plant parameter.
      */
     public function index(Request $request, string $plant = '3000', ?int $year = null, ?int $month = null): View
     {
@@ -25,7 +24,6 @@ class CalendarController extends Controller
         $year = $date->year;
         $month = $date->month;
 
-        // Pass the plant parameter to get the correct data
         list($data, $weeks, $totals) = $this->getCalendarData($year, $month, $plant);
 
         $prevMonth = $date->copy()->subMonth();
@@ -34,7 +32,7 @@ class CalendarController extends Controller
         $runningText = $this->getWeeklyChangeAnalysis($plant);
 
         return view('calendar.index', [
-            'plant'       => $plant, // Pass plant to the view for URL generation
+            'plant'       => $plant,
             'year'        => $year,
             'month'       => $month,
             'data'        => $data,
@@ -51,7 +49,6 @@ class CalendarController extends Controller
 
     /**
      * Mengekspor data kalender bulanan ke dalam format PDF.
-     * MODIFIED: Added $plant parameter.
      */
     public function exportPdf(string $plant, int $year, int $month): Response
     {
@@ -73,7 +70,6 @@ class CalendarController extends Controller
 
     /**
      * Menerima aksi dari supervisor untuk mengirim notifikasi ke tim.
-     * MODIFIED: Added $plant parameter.
      */
     public function notifyTeamFromSupervisor(Request $request, string $plant, string $date): string
     {
@@ -82,7 +78,6 @@ class CalendarController extends Controller
         }
 
         $carbonDate = Carbon::parse($date);
-        // Pass plant to get data for the correct plant
         $dailyData = $this->getDailyDataForDate($carbonDate, $plant);
         $recipients = $this->getActiveRecipients(true);
 
@@ -96,14 +91,11 @@ class CalendarController extends Controller
 
     /**
      * Jembatan publik untuk mengambil data harian untuk satu tanggal spesifik.
-     * MODIFIED: Added $plant parameter.
      */
     public function getDailyDataForDate(Carbon $date, string $plant): array
     {
-        // We need to modify the underlying getDailyData to return the date as well
         $data = $this->getDailyData($date, $date, $plant);
         if (!empty($data)) {
-             // Assuming getDailyData now returns a flat array with a 'date' key
             return $data;
         }
         return [];
@@ -111,7 +103,6 @@ class CalendarController extends Controller
 
     /**
      * Mengambil dan memproses semua data untuk kalender bulanan.
-     * MODIFIED: Added $plant parameter.
      */
     private function getCalendarData(int $year, int $month, string $plant): array
     {
@@ -119,7 +110,6 @@ class CalendarController extends Controller
         $startDate = $date->copy()->startOfMonth();
         $endDate = $date->copy()->endOfMonth();
 
-        // Pass the plant parameter to get the correct data
         $dailyData = $this->getDailyData($startDate, $endDate, $plant);
 
         $weeks = [];
@@ -152,19 +142,20 @@ class CalendarController extends Controller
 
     /**
      * Membuat teks analisis perubahan persentase harian selama 7 hari terakhir.
-     * MODIFIED: Added $plant parameter.
      */
     private function getWeeklyChangeAnalysis(string $plant): string
     {
-        $endDate = Carbon::today();
-        $startDate = $endDate->copy()->subDays(8);
-        // Pass the plant parameter to get the correct data
-        $data = $this->getDailyData($startDate, $endDate, $plant);
+        $today = Carbon::today();
+        $startOfWeek = $today->copy()->startOfWeek(Carbon::SUNDAY);
+        // Ambil data 8 hari untuk mendapatkan 7 perbandingan hari-ke-hari
+        $dailyStartDate = $today->copy()->subDays(8);
+        $data = $this->getDailyData($dailyStartDate, $today, $plant);
         ksort($data);
 
         $dataPoints = array_values($data);
         $dateKeys = array_keys($data);
         $analysisText = [];
+        $weeklyPercentages = []; // PERUBAHAN: Array untuk menyimpan persentase minggu ini
 
         for ($i = 1; $i < count($dataPoints); $i++) {
             $currentData = $dataPoints[$i];
@@ -182,26 +173,45 @@ class CalendarController extends Controller
                 } elseif ($percentageChange <= -0.01) {
                     $analysisText[] = "<span style='color: #f87171; font-weight: 600;'>▼</span> {$formattedDate}: Turun " . number_format(abs($percentageChange), 2) . "%";
                 }
+
+                // PERUBAHAN: Jika tanggal ada di minggu ini, tambahkan persentasenya
+                if ($currentDate->gte($startOfWeek)) {
+                    $weeklyPercentages[] = $percentageChange;
+                }
             }
         }
 
-        if (empty($analysisText)) {
+        // PERUBAHAN: Hitung rata-rata tren mingguan dan buat teksnya
+        $weeklyTrendText = '';
+        if (!empty($weeklyPercentages)) {
+            $averageTrend = array_sum($weeklyPercentages) / count($weeklyPercentages);
+            if ($averageTrend >= 0.5) {
+                $weeklyTrendText = "<span style='color: #4ade80; font-weight: 600;'>TREN RATA-RATA MINGGU INI ▲</span> Naik " . number_format($averageTrend, 2) . "%";
+            } elseif ($averageTrend <= -0.5) {
+                $weeklyTrendText = "<span style='color: #f87171; font-weight: 600;'>TREN RATA-RATA MINGGU INI ▼</span> Turun " . number_format(abs($averageTrend), 2) . "%";
+            }
+        }
+
+        $finalText = array_reverse($analysisText);
+        if(!empty($weeklyTrendText)) {
+            $finalText[] = $weeklyTrendText; // Tambahkan tren mingguan di akhir
+        }
+
+        if (empty($finalText)) {
             return 'Selamat datang di laporan hasil produksi harian Plant ' . $plant . ' PT. Kayu Mebel Indonesia.';
         }
 
-        return implode(' &nbsp; • &nbsp; ', array_reverse($analysisText));
+        return implode(' &nbsp; • &nbsp; ', $finalText);
     }
 
     /**
      * Mengambil data mentah dari database untuk rentang tanggal dan plant tertentu.
-     * MODIFIED: Added $plant parameter and a where clause for it.
-     * I'm assuming the plant column is named 'WERKS'. Please change if it's different.
      */
     private function getDailyData(Carbon $startDate, Carbon $endDate, string $plant): array
     {
         $rawData = DB::table('sap_yppr009_data')
             ->select('BUDAT_MKPF', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX')
-            ->where('WERKS', $plant) // <-- IMPORTANT: Filtering by plant
+            ->where('WERKS', $plant)
             ->whereBetween('BUDAT_MKPF', [$startDate->toDateString(), $endDate->toDateString()])
             ->get();
 

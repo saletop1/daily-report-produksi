@@ -14,13 +14,17 @@ class DashboardController extends Controller
      */
     public function index(Request $request): View
     {
-        // Tentukan rentang tanggal dari request, atau default ke 7 hari terakhir
+        // Tentukan rentang tanggal dari request untuk grafik utama
         $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::today();
-        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : $endDate->copy()->subDays(7);
+        $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : $endDate->copy()->subDays(6);
 
-        // Ambil data yang sudah diproses untuk kedua plant
+        // Ambil data rangkuman untuk kedua plant berdasarkan filter tanggal
         $plant3000Data = $this->getProductionDataForPlant('3000', $startDate, $endDate);
         $plant2000Data = $this->getProductionDataForPlant('2000', $startDate, $endDate);
+
+        // Panggil fungsi untuk tren mingguan (this week vs last week)
+        $growthPlant3000 = $this->getWeeklyTotalValueTrend('3000');
+        $growthPlant2000 = $this->getWeeklyTotalValueTrend('2000');
 
         // Siapkan data untuk grafik tren gabungan
         $trendData = $this->prepareTrendChartData([
@@ -42,8 +46,10 @@ class DashboardController extends Controller
             'endDate' => $endDate->toDateString(),
             'plant3000' => $plant3000Data,
             'plant2000' => $plant2000Data,
-            'trendChartData' => json_encode($trendData),
-            'pieChartData' => json_encode($pieData),
+            'growthPlant3000' => $growthPlant3000,
+            'growthPlant2000' => $growthPlant2000,
+            'trendChartData' => $trendData,
+            'pieChartData' => $pieData,
         ]);
     }
 
@@ -61,7 +67,8 @@ class DashboardController extends Controller
                 DB::raw('SUM(VALUSX) as total_sold_value')
             )
             ->where('WERKS', $plantId)
-            ->whereBetween('BUDAT_MKPF', [$startDate->toDateString(), $endDate->toDateString()])
+            ->whereDate('BUDAT_MKPF', '>=', $startDate)
+            ->whereDate('BUDAT_MKPF', '<=', $endDate)
             ->groupBy('production_date')
             ->orderBy('production_date', 'asc')
             ->get();
@@ -92,18 +99,17 @@ class DashboardController extends Controller
         $labels = [];
         $datasets = [];
 
-        // Buat label tanggal untuk seluruh rentang
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
             $labels[] = $date->format('d M');
         }
 
-        $colors = ['#3b82f6', '#10b981']; // Biru untuk Plant 3000, Hijau untuk Plant 2000
+        $colors = ['#3b82f6', '#10b981'];
         $i = 0;
 
         foreach ($allPlantsData as $plantName => $dailyData) {
             $grData = [];
-            foreach ($labels as $label) {
-                $dateKey = Carbon::createFromFormat('d M', $label, 'Asia/Jakarta')->format('Y-m-d');
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $dateKey = $date->format('Y-m-d');
                 $grData[] = $dailyData[$dateKey]['gr'] ?? 0;
             }
 
@@ -111,7 +117,7 @@ class DashboardController extends Controller
                 'label' => $plantName . ' (GR)',
                 'data' => $grData,
                 'borderColor' => $colors[$i],
-                'backgroundColor' => $colors[$i] . '33', // Transparan
+                'backgroundColor' => $colors[$i] . '33',
                 'fill' => true,
                 'tension' => 0.3,
             ];
@@ -119,5 +125,61 @@ class DashboardController extends Controller
         }
 
         return ['labels' => $labels, 'datasets' => $datasets];
+    }
+
+    /**
+     * Menghitung tren total nilai minggu ini vs minggu lalu dan menyertakan detail nilainya.
+     */
+    private function getWeeklyTotalValueTrend(string $plantId): array
+    {
+        $today = Carbon::today();
+        $startOfWeek = $today->copy()->startOfWeek(Carbon::SUNDAY);
+
+        $startOfLastWeek = $startOfWeek->copy()->subWeek();
+
+        // PERBAIKAN: Menggunakan metode yang lebih robust untuk menghitung tanggal akhir minggu lalu.
+        // Ini akan menambahkan jumlah hari yang sama yang telah berlalu di minggu ini.
+        $daysPassedThisWeek = $today->dayOfWeek; // Sunday=0, Monday=1, etc.
+        $endOfLastWeekComparable = $startOfLastWeek->copy()->addDays($daysPassedThisWeek);
+
+        $thisWeekValue = DB::table('sap_yppr009_data')
+            ->where('WERKS', $plantId)
+            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [
+                $startOfWeek->format('Y-m-d'),
+                $today->format('Y-m-d')
+            ])
+            ->sum('VALUS');
+
+        $lastWeekValue = DB::table('sap_yppr009_data')
+            ->where('WERKS', $plantId)
+            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [
+                $startOfLastWeek->format('Y-m-d'),
+                $endOfLastWeekComparable->format('Y-m-d')
+            ])
+            ->sum('VALUS');
+
+        $thisWeekValue = (float) ($thisWeekValue ?? 0);
+        $lastWeekValue = (float) ($lastWeekValue ?? 0);
+
+        $percentage = 0;
+        if ($lastWeekValue > 0) {
+            $percentage = (($thisWeekValue - $lastWeekValue) / $lastWeekValue) * 100;
+        } elseif ($thisWeekValue > 0) {
+            $percentage = 100;
+        }
+
+        $trend = 'stabil';
+        if ($percentage > 0.5) {
+            $trend = 'naik';
+        } elseif ($percentage < -0.5) {
+            $trend = 'turun';
+        }
+
+        return [
+            'percentage'    => $percentage,
+            'trend'         => $trend,
+            'thisWeekValue' => $thisWeekValue,
+            'lastWeekValue' => $lastWeekValue,
+        ];
     }
 }
