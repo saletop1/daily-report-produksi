@@ -7,7 +7,7 @@
 
         /* Transisi untuk modal */
         .modal, .modal-panel {
-            transition: all 0.4s ease-in-out;
+            transition: all 0.2s ease-in-out;
         }
     </style>
 
@@ -104,7 +104,7 @@
                                 <i class="fa-solid fa-dollar-sign w-4 text-center mr-2 text-blue-600"></i>
                                 <span>Total Value GR</span>
                             </div>
-                            <p class="text-2xl font-bold text-blue-700 mt-1">$ {{ number_format($totals['totalValue'], 2, ',', '.') }}</p>
+                            <p class="text-2xl font-bold text-blue-700 mt-1">{{ number_format($totals['totalValue'], 2, ',', '.') }}</p>
                         </div>
                         <div class="bg-gray-100 p-4 rounded-xl">
                             <div class="flex items-center text-sm text-gray-800 font-medium">
@@ -118,9 +118,20 @@
                                 <i class="fa-solid fa-hand-holding-dollar w-4 text-center mr-2 text-amber-500"></i>
                                 <span>Total Transfer Value</span>
                             </div>
-                            <p class="text-2xl font-bold text-gray-700 mt-1">$ {{ number_format($totals['totalSoldValue'], 2, ',', '.') }}</p>
+                            <p class="text-2xl font-bold text-gray-700 mt-1">{{ number_format($totals['totalSoldValue'], 2, ',', '.') }}</p>
                         </div>
                     </div>
+                    {{-- <div class="w-48">
+                        <div class="text-center">
+                         <span class="text-sm font-medium text-gray-500">Pencapaian Target Hari Ini</span>
+                          <div class="relative h-24 w-full">
+                            <canvas id="dailyTargetGauge"></canvas>
+                            <div id="gauge-text" class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-gray-800" style="top: 50%;">
+                                0%
+                            </div>
+                        </div>
+                    </div> --}}
+                </div>
                     <div class="mt-8">
                         <a href="{{ route('calendar.exportPdf', ['plant' => $plant, 'year' => $year, 'month' => $month]) }}"
                            class="flex w-full items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium transition">

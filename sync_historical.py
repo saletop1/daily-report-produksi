@@ -130,7 +130,7 @@ def sync_data_for_plant(start_date_str, end_date_str, plant_id, dispo_list):
                 records_to_insert.append({
                     'WERKS': row.get('WERKS'), 'LGORT': row.get('LGORT'), 'DISPO': row.get('DISPO'), 'AUFNR': row.get('AUFNR'),
                     'CHARG': row.get('CHARG'), 'MATNR': row.get('MATNR'), 'MAKTX': row.get('MAKTX'),
-                    'MAT_KDAUF': row.get('MAT_KDAUF'), 'MAT_KDPOS': row.get('MAT_KDPOS'),
+                    'MAT_KDAUF': row.get('MAT_KDAUF'), 'MAT_KDPOS': row.get('MAT_KDPOS'),'NAME2': row.get('NAME2'),
                     'PSMNG': float(row.get('PSMNG', 0)), 'MENGE': float(row.get('MENGE', 0)),
                     'MENGEX': float(row.get('MENGEX', 0)), 'WEMNG': float(row.get('WEMNG', 0)),
                     'MEINS': row.get('MEINS'), 'BUDAT_MKPF': row.get('BUDAT_MKPF'),
@@ -155,10 +155,10 @@ def sync_data_for_plant(start_date_str, end_date_str, plant_id, dispo_list):
             logger.info(f"Menjalankan INSERT untuk {inserted_count} record baru...")
             insert_query = """
                 INSERT INTO sap_yppr009_data (
-                    WERKS, LGORT, DISPO, AUFNR, CHARG, MATNR, MAKTX, MAT_KDAUF, MAT_KDPOS,
+                    WERKS, LGORT, DISPO, AUFNR, CHARG, MATNR, MAKTX, MAT_KDAUF, MAT_KDPOS, NAME2,
                     PSMNG, MENGE, MENGEX, WEMNG, MEINS, BUDAT_MKPF, NODAY, NETPR, VALUS, VALUSX
                 ) VALUES (
-                    %(WERKS)s, %(LGORT)s, %(DISPO)s, %(AUFNR)s, %(CHARG)s, %(MATNR)s, %(MAKTX)s, %(MAT_KDAUF)s, %(MAT_KDPOS)s,
+                    %(WERKS)s, %(LGORT)s, %(DISPO)s, %(AUFNR)s, %(CHARG)s, %(MATNR)s, %(MAKTX)s, %(MAT_KDAUF)s, %(MAT_KDPOS)s, %(NAME2)s,
                     %(PSMNG)s, %(MENGE)s, %(MENGEX)s, %(WEMNG)s, %(MEINS)s, %(BUDAT_MKPF)s, %(NODAY)s, %(NETPR)s, %(VALUS)s, %(VALUSX)s
                 )
             """

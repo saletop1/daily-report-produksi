@@ -14,25 +14,27 @@ class DashboardController extends Controller
      */
     public function index(Request $request): View
     {
-        // Tentukan rentang tanggal dari request untuk grafik utama
+        // Tentukan rentang tanggal dari request
         $endDate = $request->input('end_date') ? Carbon::parse($request->input('end_date')) : Carbon::today();
         $startDate = $request->input('start_date') ? Carbon::parse($request->input('start_date')) : $endDate->copy()->subDays(6);
 
-        // Ambil data rangkuman untuk kedua plant berdasarkan filter tanggal
+        // Ambil data rangkuman
         $plant3000Data = $this->getProductionDataForPlant('3000', $startDate, $endDate);
         $plant2000Data = $this->getProductionDataForPlant('2000', $startDate, $endDate);
 
-        // Panggil fungsi untuk tren mingguan (this week vs last week)
+        // Ambil data tren mingguan
         $growthPlant3000 = $this->getWeeklyTotalValueTrend('3000');
         $growthPlant2000 = $this->getWeeklyTotalValueTrend('2000');
 
-        // Siapkan data untuk grafik tren gabungan
+        // BARU: Ambil data top 3 customer untuk masing-masing plant
+        $topCustomers3000 = $this->getTopCustomersByValue('3000', $startDate, $endDate);
+        $topCustomers2000 = $this->getTopCustomersByValue('2000', $startDate, $endDate);
+
+        // Siapkan data untuk grafik
         $trendData = $this->prepareTrendChartData([
             'Plant SMG' => $plant3000Data['daily'],
             'Plant SBY' => $plant2000Data['daily']
         ], $startDate, $endDate);
-
-        // Siapkan data untuk diagram pai kontribusi nilai
         $pieData = [
             'labels' => ['Plant SMG', 'Plant SBY'],
             'data' => [
@@ -50,7 +52,34 @@ class DashboardController extends Controller
             'growthPlant2000' => $growthPlant2000,
             'trendChartData' => $trendData,
             'pieChartData' => $pieData,
+            'topCustomers3000' => $topCustomers3000, // BARU: Kirim data ke view
+            'topCustomers2000' => $topCustomers2000, // BARU: Kirim data ke view
         ]);
+    }
+
+    /**
+     * BARU: Mengambil 3 customer teratas berdasarkan total nilai (VALUS).
+     */
+    private function getTopCustomersByValue(string $plantId, Carbon $startDate, Carbon $endDate): array
+    {
+        $topCustomers = DB::table('sap_yppr009_data')
+            ->select('NAME2', DB::raw('SUM(VALUS) as total_value'))
+            ->where('WERKS', $plantId)
+            ->whereNotNull('NAME2')
+            ->where('NAME2', '!=', '')
+            ->whereDate('BUDAT_MKPF', '>=', $startDate)
+            ->whereDate('BUDAT_MKPF', '<=', $endDate)
+            ->groupBy('NAME2')
+            ->orderBy('total_value', 'desc')
+            ->limit(3)
+            ->get();
+
+        return [
+            'labels' => $topCustomers->pluck('NAME2')->map(function ($name) {
+                return substr($name, 0, 20) . (strlen($name) > 20 ? '...' : ''); // Memotong nama jika terlalu panjang
+            }),
+            'data'   => $topCustomers->pluck('total_value'),
+        ];
     }
 
     /**
@@ -128,7 +157,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Menghitung tren total nilai minggu ini vs minggu lalu dan menyertakan detail nilainya.
+     * Menghitung tren total nilai minggu ini vs minggu lalu.
      */
     private function getWeeklyTotalValueTrend(string $plantId): array
     {
@@ -136,30 +165,18 @@ class DashboardController extends Controller
         $startOfWeek = $today->copy()->startOfWeek(Carbon::SUNDAY);
 
         $startOfLastWeek = $startOfWeek->copy()->subWeek();
-
-        // PERBAIKAN: Menggunakan metode yang lebih robust untuk menghitung tanggal akhir minggu lalu.
-        // Ini akan menambahkan jumlah hari yang sama yang telah berlalu di minggu ini.
-        $daysPassedThisWeek = $today->dayOfWeek; // Sunday=0, Monday=1, etc.
+        $daysPassedThisWeek = $today->dayOfWeek;
         $endOfLastWeekComparable = $startOfLastWeek->copy()->addDays($daysPassedThisWeek);
 
-        $thisWeekValue = DB::table('sap_yppr009_data')
+        $thisWeekValue = (float) DB::table('sap_yppr009_data')
             ->where('WERKS', $plantId)
-            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [
-                $startOfWeek->format('Y-m-d'),
-                $today->format('Y-m-d')
-            ])
+            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [$startOfWeek->format('Y-m-d'), $today->format('Y-m-d')])
             ->sum('VALUS');
 
-        $lastWeekValue = DB::table('sap_yppr009_data')
+        $lastWeekValue = (float) DB::table('sap_yppr009_data')
             ->where('WERKS', $plantId)
-            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [
-                $startOfLastWeek->format('Y-m-d'),
-                $endOfLastWeekComparable->format('Y-m-d')
-            ])
+            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [$startOfLastWeek->format('Y-m-d'), $endOfLastWeekComparable->format('Y-m-d')])
             ->sum('VALUS');
-
-        $thisWeekValue = (float) ($thisWeekValue ?? 0);
-        $lastWeekValue = (float) ($lastWeekValue ?? 0);
 
         $percentage = 0;
         if ($lastWeekValue > 0) {

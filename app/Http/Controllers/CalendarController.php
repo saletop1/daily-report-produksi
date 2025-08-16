@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ListEmail;
+use Illuminate\Support\Facades\Http; // <-- TAMBAHKAN INI
 use Illuminate\Support\Facades\Mail;
 use App\Console\Commands\CheckLowValueProduction;
 use App\Mail\DailyReportMail;
@@ -31,20 +32,66 @@ class CalendarController extends Controller
 
         $runningText = $this->getWeeklyChangeAnalysis($plant);
 
+        // BARU: Panggil fungsi untuk mendapatkan data target harian
+        $dailyTargetData = $this->getDailyTargetData($plant);
+
         return view('calendar.index', [
-            'plant'       => $plant,
-            'year'        => $year,
-            'month'       => $month,
-            'data'        => $data,
-            'weeks'       => $weeks,
-            'totals'      => $totals,
-            'prevYear'    => $prevMonth->year,
-            'prevMonth'   => $prevMonth->month,
-            'nextYear'    => $nextMonth->year,
-            'nextMonth'   => $nextMonth->month,
-            'recipients'  => $this->getActiveRecipients(),
-            'runningText' => $runningText,
+            'plant'           => $plant,
+            'year'            => $year,
+            'month'           => $month,
+            'data'            => $data,
+            'weeks'           => $weeks,
+            'totals'          => $totals,
+            'prevYear'        => $prevMonth->year,
+            'prevMonth'       => $prevMonth->month,
+            'nextYear'        => $nextMonth->year,
+            'nextMonth'       => $nextMonth->month,
+            'recipients'      => $this->getActiveRecipients(),
+            'runningText'     => $runningText,
+            'dailyTargetData' => $dailyTargetData, // BARU: Kirim data target ke view
         ]);
+    }
+
+    /**
+     * BARU: Mengambil data target harian dari API Python.
+     */
+    private function getDailyTargetData(string $plant): array
+    {
+        try {
+            // Panggil endpoint API yang sudah Anda buat di skrip Python
+            $response = Http::timeout(5)->get('http://127.0.0.1:5051/api/daily_target_status');
+
+            if ($response->successful()) {
+                $allPlantsData = $response->json();
+                // Cari data untuk plant yang spesifik
+                foreach ($allPlantsData as $plantData) {
+                    if (isset($plantData['plant_id']) && $plantData['plant_id'] == $plant) {
+                        return [
+                            'percentage'    => $plantData['percentage'] ?? 0,
+                            'current_value' => $plantData['current_value'] ?? 0,
+                            'target'        => $plantData['target'] ?? 0,
+                            'error'         => null,
+                        ];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Tangani jika API tidak bisa dihubungi
+            return [
+                'percentage'    => 0,
+                'current_value' => 0,
+                'target'        => 0,
+                'error'         => 'API service not available.',
+            ];
+        }
+
+        // Default jika plant tidak ditemukan atau ada error lain
+        return [
+            'percentage'    => 0,
+            'current_value' => 0,
+            'target'        => 0,
+            'error'         => 'Data for plant not found.',
+        ];
     }
 
     /**
@@ -147,7 +194,6 @@ class CalendarController extends Controller
     {
         $today = Carbon::today();
         $startOfWeek = $today->copy()->startOfWeek(Carbon::SUNDAY);
-        // Ambil data 8 hari untuk mendapatkan 7 perbandingan hari-ke-hari
         $dailyStartDate = $today->copy()->subDays(8);
         $data = $this->getDailyData($dailyStartDate, $today, $plant);
         ksort($data);
@@ -155,7 +201,7 @@ class CalendarController extends Controller
         $dataPoints = array_values($data);
         $dateKeys = array_keys($data);
         $analysisText = [];
-        $weeklyPercentages = []; // PERUBAHAN: Array untuk menyimpan persentase minggu ini
+        $weeklyPercentages = [];
 
         for ($i = 1; $i < count($dataPoints); $i++) {
             $currentData = $dataPoints[$i];
@@ -174,14 +220,12 @@ class CalendarController extends Controller
                     $analysisText[] = "<span style='color: #f87171; font-weight: 600;'>▼</span> {$formattedDate}: Turun " . number_format(abs($percentageChange), 2) . "%";
                 }
 
-                // PERUBAHAN: Jika tanggal ada di minggu ini, tambahkan persentasenya
                 if ($currentDate->gte($startOfWeek)) {
                     $weeklyPercentages[] = $percentageChange;
                 }
             }
         }
 
-        // PERUBAHAN: Hitung rata-rata tren mingguan dan buat teksnya
         $weeklyTrendText = '';
         if (!empty($weeklyPercentages)) {
             $averageTrend = array_sum($weeklyPercentages) / count($weeklyPercentages);
@@ -194,7 +238,7 @@ class CalendarController extends Controller
 
         $finalText = array_reverse($analysisText);
         if(!empty($weeklyTrendText)) {
-            $finalText[] = $weeklyTrendText; // Tambahkan tren mingguan di akhir
+            $finalText[] = $weeklyTrendText;
         }
 
         if (empty($finalText)) {
