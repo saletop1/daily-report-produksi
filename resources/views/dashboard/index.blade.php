@@ -84,13 +84,13 @@
             <!-- BARU: Grafik Top Customers -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 3 Customers (Plant Semarang)</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 4 Customers (Plant Semarang)</h3>
                     <div class="relative h-72">
                         <canvas id="topCustomersChart3000"></canvas>
                     </div>
                 </div>
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 3 Customers (Plant Surabaya)</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 4 Customers (Plant Surabaya)</h3>
                     <div class="relative h-72">
                         <canvas id="topCustomersChart2000"></canvas>
                     </div>

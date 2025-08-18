@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ListEmail;
-use Illuminate\Support\Facades\Http; // <-- TAMBAHKAN INI
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Console\Commands\CheckLowValueProduction;
 use App\Mail\DailyReportMail;
@@ -32,7 +32,6 @@ class CalendarController extends Controller
 
         $runningText = $this->getWeeklyChangeAnalysis($plant);
 
-        // BARU: Panggil fungsi untuk mendapatkan data target harian
         $dailyTargetData = $this->getDailyTargetData($plant);
 
         return view('calendar.index', [
@@ -48,22 +47,20 @@ class CalendarController extends Controller
             'nextMonth'       => $nextMonth->month,
             'recipients'      => $this->getActiveRecipients(),
             'runningText'     => $runningText,
-            'dailyTargetData' => $dailyTargetData, // BARU: Kirim data target ke view
+            'dailyTargetData' => $dailyTargetData,
         ]);
     }
 
     /**
-     * BARU: Mengambil data target harian dari API Python.
+     * Mengambil data target harian dari API Python.
      */
     private function getDailyTargetData(string $plant): array
     {
         try {
-            // Panggil endpoint API yang sudah Anda buat di skrip Python
             $response = Http::timeout(5)->get('http://127.0.0.1:5051/api/daily_target_status');
 
             if ($response->successful()) {
                 $allPlantsData = $response->json();
-                // Cari data untuk plant yang spesifik
                 foreach ($allPlantsData as $plantData) {
                     if (isset($plantData['plant_id']) && $plantData['plant_id'] == $plant) {
                         return [
@@ -76,20 +73,14 @@ class CalendarController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            // Tangani jika API tidak bisa dihubungi
             return [
-                'percentage'    => 0,
-                'current_value' => 0,
-                'target'        => 0,
+                'percentage'    => 0, 'current_value' => 0, 'target' => 0,
                 'error'         => 'API service not available.',
             ];
         }
 
-        // Default jika plant tidak ditemukan atau ada error lain
         return [
-            'percentage'    => 0,
-            'current_value' => 0,
-            'target'        => 0,
+            'percentage'    => 0, 'current_value' => 0, 'target' => 0,
             'error'         => 'Data for plant not found.',
         ];
     }
@@ -103,12 +94,8 @@ class CalendarController extends Controller
         $date = Carbon::createFromDate($year, $month, 1);
 
         $pdf = Pdf::loadView('exports.calendar-pdf', [
-            'plant'  => $plant,
-            'year'   => $year,
-            'month'  => $month,
-            'data'   => $data,
-            'weeks'  => $weeks,
-            'totals' => $totals,
+            'plant'  => $plant, 'year'   => $year, 'month'  => $month,
+            'data'   => $data, 'weeks'  => $weeks, 'totals' => $totals,
         ])->setPaper('a4', 'landscape');
 
         $fileName = 'Laporan-Produksi-Plant-' . $plant . '-' . $date->isoFormat('MMMM-YYYY') . '.pdf';
@@ -142,10 +129,7 @@ class CalendarController extends Controller
     public function getDailyDataForDate(Carbon $date, string $plant): array
     {
         $data = $this->getDailyData($date, $date, $plant);
-        if (!empty($data)) {
-            return $data;
-        }
-        return [];
+        return !empty($data) ? $data : [];
     }
 
     /**
@@ -188,12 +172,12 @@ class CalendarController extends Controller
     }
 
     /**
-     * Membuat teks analisis perubahan persentase harian selama 7 hari terakhir.
+     * PERBAIKAN: Membuat teks analisis harian DAN tren 7-hari terakhir.
      */
     private function getWeeklyChangeAnalysis(string $plant): string
     {
+        // --- 1. Analisis Harian (Perbandingan hari ke hari untuk 7 hari terakhir) ---
         $today = Carbon::today();
-        $startOfWeek = $today->copy()->startOfWeek(Carbon::SUNDAY);
         $dailyStartDate = $today->copy()->subDays(8);
         $data = $this->getDailyData($dailyStartDate, $today, $plant);
         ksort($data);
@@ -201,7 +185,6 @@ class CalendarController extends Controller
         $dataPoints = array_values($data);
         $dateKeys = array_keys($data);
         $analysisText = [];
-        $weeklyPercentages = [];
 
         for ($i = 1; $i < count($dataPoints); $i++) {
             $currentData = $dataPoints[$i];
@@ -219,26 +202,39 @@ class CalendarController extends Controller
                 } elseif ($percentageChange <= -0.01) {
                     $analysisText[] = "<span style='color: #f87171; font-weight: 600;'>▼</span> {$formattedDate}: Turun " . number_format(abs($percentageChange), 2) . "%";
                 }
-
-                if ($currentDate->gte($startOfWeek)) {
-                    $weeklyPercentages[] = $percentageChange;
-                }
             }
         }
+
+        // --- 2. Analisis Tren 7-Hari Terakhir (Sama seperti di Dashboard) ---
+        $currentPeriodEnd = Carbon::today()->endOfDay();
+        $currentPeriodStart = Carbon::today()->subDays(6)->startOfDay();
+        $previousPeriodEnd = $currentPeriodStart->copy()->subSecond();
+        $previousPeriodStart = $previousPeriodEnd->copy()->subDays(6)->startOfDay();
+
+        $currentValue = (float) DB::table('sap_yppr009_data')
+            ->where('WERKS', $plant)
+            ->whereBetween('BUDAT_MKPF', [$currentPeriodStart->toDateTimeString(), $currentPeriodEnd->toDateTimeString()])
+            ->sum('VALUS');
+
+        $previousValue = (float) DB::table('sap_yppr009_data')
+            ->where('WERKS', $plant)
+            ->whereBetween('BUDAT_MKPF', [$previousPeriodStart->toDateTimeString(), $previousPeriodEnd->toDateTimeString()])
+            ->sum('VALUS');
 
         $weeklyTrendText = '';
-        if (!empty($weeklyPercentages)) {
-            $averageTrend = array_sum($weeklyPercentages) / count($weeklyPercentages);
-            if ($averageTrend >= 0.5) {
-                $weeklyTrendText = "<span style='color: #4ade80; font-weight: 600;'>TREN RATA-RATA MINGGU INI ▲</span> Naik " . number_format($averageTrend, 2) . "%";
-            } elseif ($averageTrend <= -0.5) {
-                $weeklyTrendText = "<span style='color: #f87171; font-weight: 600;'>TREN RATA-RATA MINGGU INI ▼</span> Turun " . number_format(abs($averageTrend), 2) . "%";
+        if ($previousValue > 0) {
+            $percentage = (($currentValue - $previousValue) / $previousValue) * 100;
+            if ($percentage >= 0.5) {
+                $weeklyTrendText = "<span style='color: #4ade80; font-weight: 600;'>TREN 7 HARI TERAKHIR DIBANDINGKAN MINGGU LALU ▲</span> Naik " . number_format($percentage, 2) . "%";
+            } elseif ($percentage <= -0.5) {
+                $weeklyTrendText = "<span style='color: #f87171; font-weight: 600;'>TREN 7 HARI TERAKHIR DIBANDINGKAN MINGGU LALU ▼</span> Turun " . number_format(abs($percentage), 2) . "%";
             }
         }
 
+        // --- 3. Gabungkan Semua Teks ---
         $finalText = array_reverse($analysisText);
         if(!empty($weeklyTrendText)) {
-            $finalText[] = $weeklyTrendText;
+            $finalText[] = $weeklyTrendText; // Tambahkan tren mingguan di akhir
         }
 
         if (empty($finalText)) {
@@ -249,14 +245,17 @@ class CalendarController extends Controller
     }
 
     /**
-     * Mengambil data mentah dari database untuk rentang tanggal dan plant tertentu.
+     * Mengambil data mentah dari database menggunakan query tanggal yang lebih andal.
      */
     private function getDailyData(Carbon $startDate, Carbon $endDate, string $plant): array
     {
+        $start = $startDate->copy()->startOfDay();
+        $end = $endDate->copy()->endOfDay();
+
         $rawData = DB::table('sap_yppr009_data')
             ->select('BUDAT_MKPF', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX')
             ->where('WERKS', $plant)
-            ->whereBetween('BUDAT_MKPF', [$startDate->toDateString(), $endDate->toDateString()])
+            ->whereBetween('BUDAT_MKPF', [$start, $end])
             ->get();
 
         $data = [];

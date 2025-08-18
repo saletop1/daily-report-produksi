@@ -217,7 +217,7 @@ def run_scheduler():
             logger.info("Tidak ada jadwal berikutnya yang tertunda.")
 
         schedule.run_pending()
-        time.sleep(60) # Cek setiap ... detik
+        time.sleep(360) # Cek setiap ... detik
 
 # --- Endpoint Flask ---
 @app.route('/api/sync_historical', methods=['GET'])

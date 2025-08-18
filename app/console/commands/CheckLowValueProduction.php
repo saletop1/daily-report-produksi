@@ -32,26 +32,26 @@ class CheckLowValueProduction extends Command
      */
     public function handle(CalendarController $controller)
     {
-        $this->info('Memulai pengecekan data produksi kemarin...');
+        // PERUBAHAN: Menambahkan log untuk verifikasi eksekusi
+        Log::info('COMMAND EXECUTED: production:check-low-value is running.');
 
-        // MODIFIED: Define thresholds per plant in a configuration array
+        $this->info('Memulai pengecekan data produksi...');
+
         $plantsConfig = [
-            ['id' => '3000', 'threshold' => 50000],
+            ['id' => '3000', 'threshold' => 20000],
             ['id' => '2000', 'threshold' => 2000],
         ];
 
-        $dateToCheck = Carbon::yesterday();
-        $this->line("Tanggal yang dicek: " . $dateToCheck->toDateString());
+        $supervisors = ListEmail::where('role', 'supervisor')->where('is_active', true)->get();
 
-        $supervisor = ListEmail::where('role', 'supervisor')->where('is_active', true)->first();
-
-        if (!$supervisor) {
+        if ($supervisors->isEmpty()) {
             $this->error('KRITIS: Tidak ada supervisor aktif yang ditemukan di database.');
             Log::critical('Tidak ada supervisor aktif untuk notifikasi nilai rendah.');
             return self::FAILURE;
         }
 
-        // MODIFIED: Loop through the configuration array
+        $this->info("Ditemukan " . $supervisors->count() . " supervisor aktif.");
+
         foreach ($plantsConfig as $config) {
             $plant = $config['id'];
             $lowValueThreshold = $config['threshold'];
@@ -59,10 +59,24 @@ class CheckLowValueProduction extends Command
             $this->info("--- Mengecek Plant: {$plant} (Ambang Batas: <= " . number_format($lowValueThreshold) . ") ---");
 
             try {
+                // Logika untuk mengecek hari Minggu dan mengambil data hari Sabtu jika perlu
+                $dateToCheck = Carbon::yesterday();
+                $this->line("Tanggal pengecekan awal: " . $dateToCheck->toDateString());
+
                 $nestedDailyData = $controller->getDailyDataForDate($dateToCheck, $plant);
+
+                // Jika hari ini Senin (artinya kemarin Minggu) dan tidak ada data
+                if (Carbon::today()->isMonday() && empty($nestedDailyData)) {
+                    $this->warn("Tidak ada data untuk hari Minggu, mencoba memeriksa data hari Sabtu...");
+                    $dateToCheck = Carbon::yesterday()->subDay(); // Mundur ke hari Sabtu
+                    $this->line("Tanggal pengecekan baru: " . $dateToCheck->toDateString());
+                    $nestedDailyData = $controller->getDailyDataForDate($dateToCheck, $plant);
+                }
+
                 $dailyData = !empty($nestedDailyData) ? reset($nestedDailyData) : null;
 
                 if ($dailyData) {
+                    // Pastikan tanggal yang dikirim ke email adalah tanggal data yang sebenarnya
                     $dailyData['date'] = $dateToCheck->toDateString();
                 }
 
@@ -72,18 +86,19 @@ class CheckLowValueProduction extends Command
                 }
 
                 $currentValue = $dailyData['Total Value'];
-                $this->line("Nilai produksi saat ini: " . number_format($currentValue, 2));
+                $this->line("Nilai produksi pada {$dateToCheck->toDateString()}: " . number_format($currentValue, 2));
 
-                // Logika pengecekan nilai rendah menggunakan threshold spesifik plant
                 if ($currentValue <= $lowValueThreshold) {
-                    $this->warn("DITEMUKAN: Nilai produksi di bawah atau sama dengan ambang batas. Mengirim peringatan...");
+                    $this->warn("DITEMUKAN: Nilai produksi di bawah ambang batas. Mengirim peringatan...");
 
-                    try {
-                        Mail::to($supervisor->email)->send(new SupervisorLowValueAlert($dailyData, $plant));
-                        $this->info("Peringatan untuk Plant {$plant} berhasil dikirim ke: " . $supervisor->email);
-                    } catch (Throwable $e) {
-                        $this->error("KRITIS: Gagal mengirim email untuk Plant {$plant}. Error: " . $e->getMessage());
-                        Log::error("Kegagalan email supervisor untuk Plant {$plant}: " . $e->getMessage());
+                    foreach ($supervisors as $supervisor) {
+                        try {
+                            Mail::to($supervisor->email)->send(new SupervisorLowValueAlert($dailyData, $plant));
+                            $this->info("Peringatan untuk Plant {$plant} berhasil dikirim ke: " . $supervisor->email);
+                        } catch (Throwable $e) {
+                            $this->error("KRITIS: Gagal mengirim email ke {$supervisor->email} untuk Plant {$plant}. Error: " . $e->getMessage());
+                            Log::error("Kegagalan email supervisor untuk Plant {$plant}: " . $e->getMessage());
+                        }
                     }
                 } else {
                     $this->info("AMAN: Nilai produksi berada di atas ambang batas.");

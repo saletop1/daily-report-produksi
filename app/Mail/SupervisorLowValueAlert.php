@@ -14,7 +14,7 @@ class SupervisorLowValueAlert extends Mailable
 
     public array $alertData;
     public string $plant;
-    public string $signedUrl;
+    public string $url; // PERBAIKAN: Mengganti nama variabel agar lebih jelas
 
     /**
      * Create a new message instance.
@@ -24,17 +24,8 @@ class SupervisorLowValueAlert extends Mailable
         $this->alertData = $dailyData;
         $this->plant = $plant;
 
-        $this->signedUrl = 'http://daily-report-gr.kmifilebox.com/calendar';
-
-    //     // Buat signed URL untuk tombol "Beritahu Tim"
-    //     $this->signedUrl = URL::temporarySignedRoute(
-    //         'http://daily-report-gr.kmifilebox.com', // Pastikan nama rute ini benar
-    //         now()->addHours(24),
-    //         [
-    //             'plant' => $this->plant,
-    //             'date' => $this->alertData['date']
-    //         ]
-    //     );
+        // PERBAIKAN: Mengubah URL agar langsung mengarah ke halaman kalender plant
+        $this->url = route('calendar.index', ['plant' => $this->plant]);
     }
 
     /**
@@ -45,6 +36,6 @@ class SupervisorLowValueAlert extends Mailable
     public function build()
     {
         return $this->subject('Peringatan: Nilai Produksi Rendah untuk Plant ' . $this->plant)
-                    ->view('emails.supervisor-alert'); // Arahkan ke view yang sudah diperbaiki
+                    ->view('emails.supervisor-alert');
     }
 }

@@ -106,16 +106,17 @@
                         <td>{{ $plant }}</td>
                     </tr>
                     <tr>
-                        <th>Total Sold Value</th>
+                        <th>Total Value GR</th>
                         <td><strong>$ {{ number_format($alertData['Total Value'], 2, ',', '.') }}</strong></td>
                     </tr>
                 </tbody>
             </table>
 
-            <p>Silakan akses dashboard untuk melihat detail lebih lanjut dan memberitahu tim produksi.</p>
+            <p>Silakan akses kalender produksi untuk melihat detail lebih lanjut.</p>
 
             <div class="button-container">
-                <a href="{{ $signedUrl }}" class="button">Buka Dashboard</a>
+                {{-- PERBAIKAN: Menggunakan variabel $url dan mengubah teks tombol --}}
+                <a href="{{ $url }}" class="button">Buka Kalender Plant {{ $plant }}</a>
             </div>
         </div>
         <div class="footer">

@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $growthPlant3000 = $this->getWeeklyTotalValueTrend('3000');
         $growthPlant2000 = $this->getWeeklyTotalValueTrend('2000');
 
-        // BARU: Ambil data top 3 customer untuk masing-masing plant
+        // Ambil data top 3 customer untuk masing-masing plant
         $topCustomers3000 = $this->getTopCustomersByValue('3000', $startDate, $endDate);
         $topCustomers2000 = $this->getTopCustomersByValue('2000', $startDate, $endDate);
 
@@ -52,13 +52,13 @@ class DashboardController extends Controller
             'growthPlant2000' => $growthPlant2000,
             'trendChartData' => $trendData,
             'pieChartData' => $pieData,
-            'topCustomers3000' => $topCustomers3000, // BARU: Kirim data ke view
-            'topCustomers2000' => $topCustomers2000, // BARU: Kirim data ke view
+            'topCustomers3000' => $topCustomers3000,
+            'topCustomers2000' => $topCustomers2000,
         ]);
     }
 
     /**
-     * BARU: Mengambil 3 customer teratas berdasarkan total nilai (VALUS).
+     * Mengambil 3 customer teratas berdasarkan total nilai (VALUS).
      */
     private function getTopCustomersByValue(string $plantId, Carbon $startDate, Carbon $endDate): array
     {
@@ -71,12 +71,12 @@ class DashboardController extends Controller
             ->whereDate('BUDAT_MKPF', '<=', $endDate)
             ->groupBy('NAME2')
             ->orderBy('total_value', 'desc')
-            ->limit(3)
+            ->limit(4)
             ->get();
 
         return [
             'labels' => $topCustomers->pluck('NAME2')->map(function ($name) {
-                return substr($name, 0, 20) . (strlen($name) > 20 ? '...' : ''); // Memotong nama jika terlalu panjang
+                return substr($name, 0, 20) . (strlen($name) > 20 ? '...' : '');
             }),
             'data'   => $topCustomers->pluck('total_value'),
         ];
@@ -157,25 +157,28 @@ class DashboardController extends Controller
     }
 
     /**
-     * Menghitung tren total nilai minggu ini vs minggu lalu.
+     * PERBAIKAN: Menghitung tren total nilai dari 7 hari terakhir vs 7 hari sebelumnya.
      */
     private function getWeeklyTotalValueTrend(string $plantId): array
     {
-        $today = Carbon::today();
-        $startOfWeek = $today->copy()->startOfWeek(Carbon::SUNDAY);
+        // Periode saat ini: 7 hari terakhir termasuk hari ini
+        $currentPeriodEnd = Carbon::today()->endOfDay();
+        $currentPeriodStart = Carbon::today()->subDays(6)->startOfDay();
 
-        $startOfLastWeek = $startOfWeek->copy()->subWeek();
-        $daysPassedThisWeek = $today->dayOfWeek;
-        $endOfLastWeekComparable = $startOfLastWeek->copy()->addDays($daysPassedThisWeek);
+        // Periode sebelumnya: 7 hari sebelum periode saat ini
+        $previousPeriodEnd = $currentPeriodStart->copy()->subSecond();
+        $previousPeriodStart = $previousPeriodEnd->copy()->subDays(6)->startOfDay();
 
+        // Query untuk periode saat ini
         $thisWeekValue = (float) DB::table('sap_yppr009_data')
             ->where('WERKS', $plantId)
-            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [$startOfWeek->format('Y-m-d'), $today->format('Y-m-d')])
+            ->whereBetween('BUDAT_MKPF', [$currentPeriodStart->toDateTimeString(), $currentPeriodEnd->toDateTimeString()])
             ->sum('VALUS');
 
+        // Query untuk periode sebelumnya
         $lastWeekValue = (float) DB::table('sap_yppr009_data')
             ->where('WERKS', $plantId)
-            ->whereBetween(DB::raw('DATE(BUDAT_MKPF)'), [$startOfLastWeek->format('Y-m-d'), $endOfLastWeekComparable->format('Y-m-d')])
+            ->whereBetween('BUDAT_MKPF', [$previousPeriodStart->toDateTimeString(), $previousPeriodEnd->toDateTimeString()])
             ->sum('VALUS');
 
         $percentage = 0;

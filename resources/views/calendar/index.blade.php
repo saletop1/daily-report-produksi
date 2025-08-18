@@ -2,7 +2,7 @@
     {{-- CSS untuk Running Text --}}
     <style>
         .marquee-container { width: 100%; overflow: hidden; background-color: #1f2937; color: white; padding: 10px 0; white-space: nowrap; box-sizing: border-box; }
-        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 70s linear infinite; }
+        .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 60s linear infinite; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
 
         /* Transisi untuk modal */
