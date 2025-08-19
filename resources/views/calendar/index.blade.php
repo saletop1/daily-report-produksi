@@ -90,7 +90,6 @@
             <div class="w-full lg:w-1/3 xl:w-1/4">
                 <div class="bg-white p-6 rounded-2xl shadow-lg sticky top-8">
                     <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center"><i class="fa-solid fa-industry mr-3 text-gray-400"></i>Rekap Bulan Ini (Plant {{ $plant }})</h2>
-                    {{-- MODIFIED: Added icons to the summary cards --}}
                     <div class="space-y-4">
                         <div class="bg-green-50 p-4 rounded-xl">
                             <div class="flex items-center text-sm text-gray-800 font-medium">
@@ -101,9 +100,9 @@
                         </div>
                         <div class="bg-blue-50 p-4 rounded-xl">
                              <div class="flex items-center text-sm text-gray-800 font-medium">
-                                <i class="fa-solid fa-dollar-sign w-4 text-center mr-2 text-blue-600"></i>
-                                <span>Total Value GR</span>
-                            </div>
+                                 <i class="fa-solid fa-dollar-sign w-4 text-center mr-2 text-blue-600"></i>
+                                 <span>Total Value GR</span>
+                             </div>
                             <p class="text-2xl font-bold text-blue-700 mt-1">{{ number_format($totals['totalValue'], 2, ',', '.') }}</p>
                         </div>
                         <div class="bg-gray-100 p-4 rounded-xl">
@@ -121,31 +120,19 @@
                             <p class="text-2xl font-bold text-gray-700 mt-1">{{ number_format($totals['totalSoldValue'], 2, ',', '.') }}</p>
                         </div>
                     </div>
-                    {{-- <div class="w-48">
-                        <div class="text-center">
-                         <span class="text-sm font-medium text-gray-500">Pencapaian Target Hari Ini</span>
-                          <div class="relative h-24 w-full">
-                            <canvas id="dailyTargetGauge"></canvas>
-                            <div id="gauge-text" class="absolute inset-0 flex items-center justify-center text-2xl font-bold text-gray-800" style="top: 50%;">
-                                0%
-                            </div>
+                        <div class="mt-8">
+                            <a href="{{ route('calendar.exportPdf', ['plant' => $plant, 'year' => $year, 'month' => $month]) }}"
+                               class="flex w-full items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium transition">
+                                 <i class="fa-solid fa-download mr-2"></i>
+                                 Export PDF
+                            </a>
                         </div>
-                    </div> --}}
-                </div>
-                    <div class="mt-8">
-                        <a href="{{ route('calendar.exportPdf', ['plant' => $plant, 'year' => $year, 'month' => $month]) }}"
-                           class="flex w-full items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium transition">
-                            <i class="fa-solid fa-download mr-2"></i>
-                            Export PDF
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- HTML untuk Modal --}}
-    <!-- Modal Detail Produksi -->
     <div id="details-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4 modal opacity-0">
         <div id="modal-panel" class="bg-white rounded-2xl shadow-xl w-full max-w-lg modal-panel scale-95">
             <div class="flex items-center justify-between p-5 border-b">
@@ -153,16 +140,21 @@
                 <button id="modal-close-btn" class="text-gray-400 hover:text-gray-800 text-2xl leading-none">&times;</button>
             </div>
             <div class="p-6"><div id="modal-body" class="space-y-4"></div></div>
+
+            {{-- ==================== PERUBAHAN 1 ==================== --}}
+            {{-- Tombol kirim notifikasi hanya ditampilkan untuk user dengan role 'supervisor' --}}
+            @if(auth()->user() && auth()->user()->role == 'supervisor')
             <div class="p-5 border-t bg-gray-50 rounded-b-2xl">
                 <button id="send-email-btn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:bg-blue-300">
                     <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Notifikasi Email
                 </button>
                 <p id="email-status" class="text-xs text-center mt-2 text-gray-500"></p>
             </div>
+            @endif
+            {{-- ==================== AKHIR PERUBAHAN 1 ==================== --}}
         </div>
     </div>
 
-    <!-- Modal Pemilihan Penerima Email -->
     <div id="email-selection-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden flex items-center justify-center z-[60] p-4 modal opacity-0">
         <div id="email-modal-panel" class="bg-white rounded-2xl shadow-xl w-full max-w-md modal-panel scale-95">
             <div class="flex items-center justify-between p-5 border-b">
@@ -235,9 +227,15 @@
                     <div class="bg-gray-100 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Transfer Value</p><p class="text-2xl font-bold text-gray-700">$ ${formatNumber(details['Sold Value'], 2)}</p></div>
                 </div>`;
 
-            emailStatus.textContent = '';
-            emailStatus.className = 'text-xs text-center mt-2 text-gray-500';
-            sendEmailBtn.disabled = false;
+            // Hanya reset status jika elemennya ada
+            if (emailStatus) {
+                emailStatus.textContent = '';
+                emailStatus.className = 'text-xs text-center mt-2 text-gray-500';
+            }
+            if (sendEmailBtn) {
+                sendEmailBtn.disabled = false;
+            }
+
             openModal(detailsModal, detailsModalPanel);
         };
 
@@ -261,7 +259,12 @@
             });
         });
 
-        sendEmailBtn.addEventListener('click', openEmailSelectionModal);
+        {{-- ==================== PERUBAHAN 2 ==================== --}}
+        // Tambahkan event listener hanya jika tombolnya ada (untuk supervisor)
+        if (sendEmailBtn) {
+            sendEmailBtn.addEventListener('click', openEmailSelectionModal);
+        }
+        {{-- ==================== AKHIR PERUBAHAN 2 ==================== --}}
 
         confirmSendBtn.addEventListener('click', function() {
             const selectedEmails = Array.from(document.querySelectorAll('#recipient-list input:checked')).map(cb => cb.value);
@@ -271,8 +274,9 @@
 
             recipientError.classList.add('hidden');
             closeModal(emailSelectionModal, emailModalPanel);
-            emailStatus.textContent = 'Mengirim notifikasi...';
-            sendEmailBtn.disabled = true;
+
+            if (emailStatus) emailStatus.textContent = 'Mengirim notifikasi...';
+            if (sendEmailBtn) sendEmailBtn.disabled = true;
 
             fetch("{{ route('api.notification.send') }}", {
                 method: 'POST',
@@ -282,13 +286,19 @@
             .then(response => response.json().then(data => ({ ok: response.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok) throw data;
-                emailStatus.textContent = data.message || 'Notifikasi berhasil dikirim!';
-                emailStatus.className = 'text-xs text-center mt-2 text-green-600 font-semibold';
+                if (emailStatus) {
+                    emailStatus.textContent = data.message || 'Notifikasi berhasil dikirim!';
+                    emailStatus.className = 'text-xs text-center mt-2 text-green-600 font-semibold';
+                }
             })
             .catch(error => {
-                emailStatus.textContent = `Error: ${error.message || 'Terjadi kesalahan jaringan.'}`;
-                emailStatus.className = 'text-xs text-center mt-2 text-red-600 font-semibold';
-                sendEmailBtn.disabled = false;
+                if (emailStatus) {
+                    emailStatus.textContent = `Error: ${error.message || 'Terjadi kesalahan jaringan.'}`;
+                    emailStatus.className = 'text-xs text-center mt-2 text-red-600 font-semibold';
+                }
+                if (sendEmailBtn) {
+                    sendEmailBtn.disabled = false;
+                }
             });
         });
 
