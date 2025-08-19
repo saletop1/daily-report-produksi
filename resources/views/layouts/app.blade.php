@@ -40,76 +40,80 @@
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100">
         <!-- Navigasi Utama -->
-        <nav class="bg-white border-b border-gray-100 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-
-                    <!-- Bagian Kiri: Logo dan Link Navigasi Utama -->
-                    <div class="hidden sm:flex space-x-8 -my-px ml-10">
-                        <!-- Link Dashboard -->
-                        <a href="{{ route('dashboard') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->routeIs('dashboard') ? 'nav-link-active' : 'nav-link-inactive' }}">
-                            Dashboard
-                        </a>
-
-                        <!-- Link Plant Semarang (Default) -->
-                        <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->is('calendar/3000*') || request()->is('calendar') ? 'nav-link-active' : 'nav-link-inactive' }}">
-                            Plant Semarang
-                        </a>
-
-                        <!-- Link Plant Surabaya -->
-                        <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->is('calendar/2000*') ? 'nav-link-active' : 'nav-link-inactive' }}">
-                            Plant Surabaya
-                        </a>
-                    </div>
-
-                    <!-- Bagian Kanan: Info Pengguna dan Logout -->
-                    <div class="hidden sm:flex items-center ml-6">
-                        <div class="font-medium text-sm text-gray-800 flex items-center">
-                            <i class="fa-solid fa-user mr-2 text-gray-500"></i>
-                            <span>{{ Auth::user()->name }}</span>
-                        </div>
-                        <form method="POST" action="{{ route('logout') }}" class="ml-4">
-                            @csrf
-                            <button type="submit" class="text-sm bg-red-500 rounded-md px-3 py-2 text-white hover:bg-red-600 transition">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Navigasi Mobile (Tampilan Layar Kecil) -->
-                    <div class="sm:hidden flex items-center">
-                         <div class="font-medium text-sm text-gray-800 flex items-center">
-                            <i class="fa-solid fa-user mr-2 text-gray-500"></i>
-                         </div>
-                         <form method="POST" action="{{ route('logout') }}" class="ml-2">
-                            @csrf
-                            <button type="submit" class="text-sm bg-red-500 rounded-md px-3 py-2 text-white hover:bg-red-600 transition">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-
+<nav class="bg-white border-b border-gray-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+    <!-- Grup Kiri: Logo dan Menu digabungkan dalam satu div -->
+            <div class="flex">
+                <!-- Logo -->
+                <div class="shrink-0 flex items-center">
+                    <a href="{{ route('dashboard') }}">
+                        <img src="{{ asset('images/KMI.png') }}" alt="KMI Logo" class="block h-9 w-auto">
+                    </a>
                 </div>
-            </div>
 
-            <!-- Navigasi Bawah untuk Mobile -->
-            <div class="sm:hidden border-t border-gray-200">
-                <div class="flex justify-around py-2">
-                     <a href="{{ route('dashboard') }}" class="flex flex-col items-center text-xs transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
-                        <i class="fa-solid fa-chart-line mb-1"></i>
+                <!-- Link Navigasi -->
+                <div class="hidden sm:flex space-x-8 -my-px ml-5    "> <!-- Margin diatur di sini -->
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->routeIs('dashboard') ? 'nav-link-active' : 'nav-link-inactive' }}">
                         Dashboard
                     </a>
-                    <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="flex flex-col items-center text-xs transition {{ request()->is('calendar/3000*') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
-                        <i class="fa-solid fa-calendar-days mb-1"></i>
-                        Plant 3000
+                    <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->is('calendar/3000*') || request()->is('calendar') ? 'nav-link-active' : 'nav-link-inactive' }}">
+                        Plant Semarang
                     </a>
-                    <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="flex flex-col items-center text-xs transition {{ request()->is('calendar/2000*') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
-                        <i class="fa-solid fa-calendar-days mb-1"></i>
-                        Plant 2000
+                    <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm transition {{ request()->is('calendar/2000*') ? 'nav-link-active' : 'nav-link-inactive' }}">
+                        Plant Surabaya
                     </a>
                 </div>
             </div>
-        </nav>
+          <!-- Grup Kanan: Info Pengguna dan Logout -->
+            <div class="hidden sm:flex items-center ml-6">
+                <div class="font-medium text-sm text-gray-800 flex items-center">
+                    <i class="fa-solid fa-user mr-2 text-gray-500"></i>
+                    <span>{{ Auth::user()->name }}</span>
+                </div>
+                <form method="POST" action="{{ route('logout') }}" class="ml-4">
+                    @csrf
+                    <button type="submit" class="text-sm bg-red-500 rounded-md px-3 py-2 text-white hover:bg-red-600 transition">
+                        Logout
+                    </button>
+                </form>
+            </div>
+
+
+            <!-- Navigasi Mobile (Tampilan Layar Kecil) -->
+            <div class="sm:hidden flex items-center ml-auto"> <!-- Ditambahkan ml-auto agar tidak menabrak logo -->
+                 <div class="font-medium text-sm text-gray-800 flex items-center">
+                    <i class="fa-solid fa-user mr-2 text-gray-500"></i>
+                 </div>
+                 <form method="POST" action="{{ route('logout') }}" class="ml-2">
+                    @csrf
+                    <button type="submit" class="text-sm bg-red-500 rounded-md px-3 py-2 text-white hover:bg-red-600 transition">
+                        Logout
+                    </button>
+                 </form>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Navigasi Bawah untuk Mobile -->
+    <div class="sm:hidden border-t border-gray-200">
+        <div class="flex justify-around py-2">
+               <a href="{{ route('dashboard') }}" class="flex flex-col items-center text-xs transition {{ request()->routeIs('dashboard') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
+                    <i class="fa-solid fa-chart-line mb-1"></i>
+                    Dashboard
+               </a>
+               <a href="{{ route('calendar.index', ['plant' => '3000']) }}" class="flex flex-col items-center text-xs transition {{ request()->is('calendar/3000*') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
+                    <i class="fa-solid fa-calendar-days mb-1"></i>
+                    Plant 3000
+               </a>
+               <a href="{{ route('calendar.index', ['plant' => '2000']) }}" class="flex flex-col items-center text-xs transition {{ request()->is('calendar/2000*') ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium' }}">
+                    <i class="fa-solid fa-calendar-days mb-1"></i>
+                    Plant 2000
+               </a>
+        </div>
+    </div>
+</nav>
 
         <!-- Konten Halaman -->
         <main>

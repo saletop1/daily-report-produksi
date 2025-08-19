@@ -1,4 +1,5 @@
 <x-app-layout>
+
     {{-- CSS untuk Running Text --}}
     <style>
         .marquee-container { width: 100%; overflow: hidden; background-color: #1f2937; color: white; padding: 10px 0; white-space: nowrap; box-sizing: border-box; }
@@ -143,13 +144,14 @@
 
             {{-- ==================== PERUBAHAN 1 ==================== --}}
             {{-- Tombol kirim notifikasi hanya ditampilkan untuk user dengan role 'supervisor' --}}
-            @if(auth()->user() && auth()->user()->role == 'supervisor')
-            <div class="p-5 border-t bg-gray-50 rounded-b-2xl">
-                <button id="send-email-btn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:bg-blue-300">
-                    <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Notifikasi Email
-                </button>
-                <p id="email-status" class="text-xs text-center mt-2 text-gray-500"></p>
-            </div>
+            {{-- Cek apakah role pengguna adalah 'supervisor' ATAU 'director' --}}
+            @if(auth()->user() && in_array(strtolower(auth()->user()->role), ['supervisor', 'director']))
+                <div class="p-5 border-t bg-gray-50 rounded-b-2xl">
+                    <button id="send-email-btn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:bg-blue-300">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> Kirim Notifikasi Email
+                    </button>
+                    <p id="email-status" class="text-xs text-center mt-2 text-gray-500"></p>
+                </div>
             @endif
             {{-- ==================== AKHIR PERUBAHAN 1 ==================== --}}
         </div>

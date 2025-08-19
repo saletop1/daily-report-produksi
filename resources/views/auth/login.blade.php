@@ -14,7 +14,6 @@
     <div class="flex items-center justify-center min-h-screen">
         <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
             <div>
-                <!-- [FIXED] Logo diganti dengan gambar Anda -->
                 <img class="w-24 h-auto mx-auto" src="{{ asset('images/KMI.png') }}" alt="KMI Logo">
 
                 <h2 class="mt-6 text-3xl font-bold text-center text-gray-900">
@@ -22,14 +21,12 @@
                 </h2>
             </div>
 
-            <!-- Session Status -->
             @if (session('status'))
                 <div class="mb-4 font-medium text-sm text-green-600">
                     {{ session('status') }}
                 </div>
             @endif
 
-            <!-- Validation Errors -->
             @if ($errors->any())
                 <div class="mb-4">
                     <div class="font-medium text-red-600">Whoops! Ada yang salah.</div>
@@ -84,14 +81,8 @@
                 </div>
             </form>
 
-            @if (Route::has('register'))
-            <div class="text-sm text-center text-gray-600">
-                Belum punya akun?
-                <a href="{{ route('register') }}" class="font-medium text-blue-600 hover:text-blue-500">
-                    Daftar di sini
-                </a>
-            </div>
-            @endif
+            {{-- Bagian "Daftar di sini" telah dihapus dari sini --}}
+
         </div>
     </div>
 </body>
