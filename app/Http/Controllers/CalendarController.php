@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ListEmail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Console\Commands\CheckLowValueProduction;
 use App\Mail\DailyReportMail;
@@ -94,8 +95,8 @@ class CalendarController extends Controller
         $date = Carbon::createFromDate($year, $month, 1);
 
         $pdf = Pdf::loadView('exports.calendar-pdf', [
-            'plant'  => $plant, 'year'   => $year, 'month'  => $month,
-            'data'   => $data, 'weeks'  => $weeks, 'totals' => $totals,
+            'plant' => $plant, 'year'  => $year, 'month'  => $month,
+            'data'  => $data, 'weeks'  => $weeks, 'totals' => $totals,
         ])->setPaper('a4', 'landscape');
 
         $fileName = 'Laporan-Produksi-Plant-' . $plant . '-' . $date->isoFormat('MMMM-YYYY') . '.pdf';
@@ -172,11 +173,10 @@ class CalendarController extends Controller
     }
 
     /**
-     * PERBAIKAN: Membuat teks analisis harian DAN tren 7-hari terakhir.
+     * Membuat teks analisis harian DAN tren 7-hari terakhir.
      */
     private function getWeeklyChangeAnalysis(string $plant): string
     {
-        // --- 1. Analisis Harian (Perbandingan hari ke hari untuk 7 hari terakhir) ---
         $today = Carbon::today();
         $dailyStartDate = $today->copy()->subDays(8);
         $data = $this->getDailyData($dailyStartDate, $today, $plant);
@@ -205,7 +205,6 @@ class CalendarController extends Controller
             }
         }
 
-        // --- 2. Analisis Tren 7-Hari Terakhir (Sama seperti di Dashboard) ---
         $currentPeriodEnd = Carbon::today()->endOfDay();
         $currentPeriodStart = Carbon::today()->subDays(6)->startOfDay();
         $previousPeriodEnd = $currentPeriodStart->copy()->subSecond();
@@ -225,16 +224,15 @@ class CalendarController extends Controller
         if ($previousValue > 0) {
             $percentage = (($currentValue - $previousValue) / $previousValue) * 100;
             if ($percentage >= 0.5) {
-                $weeklyTrendText = "<span style='color: #4ade80; font-weight: 600;'>TREN 7 HARI TERAKHIR DIBANDINGKAN MINGGU LALU ▲</span> Naik " . number_format($percentage, 2) . "%";
+                $weeklyTrendText = "<span style='color: #4ade80; font-weight: 600;'>Tren 7 Hari Terakhir Vs Minggu Lalu ▲</span> Naik " . number_format($percentage, 2) . "%";
             } elseif ($percentage <= -0.5) {
-                $weeklyTrendText = "<span style='color: #f87171; font-weight: 600;'>TREN 7 HARI TERAKHIR DIBANDINGKAN MINGGU LALU ▼</span> Turun " . number_format(abs($percentage), 2) . "%";
+                $weeklyTrendText = "<span style='color: #f87171; font-weight: 600;'>Tren 7 Hari Terakhir Vs Minggu Lalu ▼</span> Turun " . number_format(abs($percentage), 2) . "%";
             }
         }
 
-        // --- 3. Gabungkan Semua Teks ---
         $finalText = array_reverse($analysisText);
         if(!empty($weeklyTrendText)) {
-            $finalText[] = $weeklyTrendText; // Tambahkan tren mingguan di akhir
+            $finalText[] = $weeklyTrendText;
         }
 
         if (empty($finalText)) {
@@ -249,18 +247,23 @@ class CalendarController extends Controller
      */
     private function getDailyData(Carbon $startDate, Carbon $endDate, string $plant): array
     {
-        $start = $startDate->copy()->startOfDay();
-        $end = $endDate->copy()->endOfDay();
+        // === PERBAIKAN UTAMA DI SINI ===
+        // Menyesuaikan format tanggal agar cocok dengan format di database ('YYYY-MM-DD')
+        $startDateFormatted = $startDate->format('Y-m-d');
+        $endDateFormatted = $endDate->format('Y-m-d');
 
         $rawData = DB::table('sap_yppr009_data')
             ->select('BUDAT_MKPF', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX')
             ->where('WERKS', $plant)
-            ->whereBetween('BUDAT_MKPF', [$start, $end])
+            ->where('BUDAT_MKPF', '>=', $startDateFormatted)
+            ->where('BUDAT_MKPF', '<=', $endDateFormatted)
             ->get();
 
         $data = [];
         foreach ($rawData as $item) {
+            // Karena formatnya sudah standar, kita bisa langsung parse tanpa validasi rumit
             $tanggal = Carbon::parse($item->BUDAT_MKPF)->toDateString();
+
             if (!isset($data[$tanggal])) {
                 $data[$tanggal] = ['gr' => 0, 'whfg' => 0, 'Total Value' => 0, 'Sold Value' => 0];
             }

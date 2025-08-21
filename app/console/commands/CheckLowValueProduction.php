@@ -32,9 +32,7 @@ class CheckLowValueProduction extends Command
      */
     public function handle(CalendarController $controller)
     {
-        // PERUBAHAN: Menambahkan log untuk verifikasi eksekusi
         Log::info('COMMAND EXECUTED: production:check-low-value is running.');
-
         $this->info('Memulai pengecekan data produksi...');
 
         $plantsConfig = [
@@ -59,16 +57,16 @@ class CheckLowValueProduction extends Command
             $this->info("--- Mengecek Plant: {$plant} (Ambang Batas: <= " . number_format($lowValueThreshold) . ") ---");
 
             try {
-                // Logika untuk mengecek hari Minggu dan mengambil data hari Sabtu jika perlu
+                // Logic to check for Sunday and get Saturday's data if needed
                 $dateToCheck = Carbon::yesterday();
                 $this->line("Tanggal pengecekan awal: " . $dateToCheck->toDateString());
 
                 $nestedDailyData = $controller->getDailyDataForDate($dateToCheck, $plant);
 
-                // Jika hari ini Senin (artinya kemarin Minggu) dan tidak ada data
+                // If today is Monday (meaning yesterday was Sunday) and there is no data
                 if (Carbon::today()->isMonday() && empty($nestedDailyData)) {
                     $this->warn("Tidak ada data untuk hari Minggu, mencoba memeriksa data hari Sabtu...");
-                    $dateToCheck = Carbon::yesterday()->subDay(); // Mundur ke hari Sabtu
+                    $dateToCheck = Carbon::yesterday()->subDay(); // Go back to Saturday
                     $this->line("Tanggal pengecekan baru: " . $dateToCheck->toDateString());
                     $nestedDailyData = $controller->getDailyDataForDate($dateToCheck, $plant);
                 }
@@ -76,18 +74,31 @@ class CheckLowValueProduction extends Command
                 $dailyData = !empty($nestedDailyData) ? reset($nestedDailyData) : null;
 
                 if ($dailyData) {
-                    // Pastikan tanggal yang dikirim ke email adalah tanggal data yang sebenarnya
+                    // Ensure the date sent in the email is the actual data date
                     $dailyData['date'] = $dateToCheck->toDateString();
                 }
 
                 if (empty($dailyData) || !isset($dailyData['Total Value'])) {
-                    $this->line("Tidak ada data produksi ('Total Value') ditemukan untuk Plant {$plant}.");
+                    $this->line("Tidak ada data produksi ('Total Value') ditemukan untuk Plant {$plant} pada tanggal {$dateToCheck->toDateString()}.");
                     continue;
                 }
 
-                $currentValue = $dailyData['Total Value'];
-                $this->line("Nilai produksi pada {$dateToCheck->toDateString()}: " . number_format($currentValue, 2));
+                // === PERBAIKAN UTAMA DIMULAI DI SINI ===
 
+                // 1. Ambil nilai asli yang mungkin berupa string berformat (e.g., "19,500.00")
+                $originalValueString = $dailyData['Total Value'];
+
+                // 2. Bersihkan string dari karakter non-numerik (kecuali titik desimal)
+                // Ini akan mengubah "19,500.00" menjadi "19500.00"
+                $sanitizedValue = preg_replace('/[^\d.]/', '', $originalValueString);
+
+                // 3. Konversi string yang sudah bersih menjadi tipe data float untuk perbandingan akurat
+                $currentValue = (float) $sanitizedValue;
+
+                // Tambahkan log yang lebih deskriptif untuk debugging
+                $this->line("Nilai produksi pada {$dateToCheck->toDateString()}: " . number_format($currentValue, 2) . " (Nilai Asli: '{$originalValueString}')");
+
+                // 4. Lakukan perbandingan numerik yang akurat
                 if ($currentValue <= $lowValueThreshold) {
                     $this->warn("DITEMUKAN: Nilai produksi di bawah ambang batas. Mengirim peringatan...");
 
@@ -103,6 +114,8 @@ class CheckLowValueProduction extends Command
                 } else {
                     $this->info("AMAN: Nilai produksi berada di atas ambang batas.");
                 }
+
+                // === AKHIR DARI PERBAIKAN ===
 
             } catch (Throwable $e) {
                 $this->error("KRITIS: Terjadi error saat memproses Plant {$plant}. Error: " . $e->getMessage());
