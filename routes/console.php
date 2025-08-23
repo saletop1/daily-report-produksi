@@ -19,6 +19,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Schedule::command('production:check-low-value')->dailyAt('06:00');
+Schedule::command('production:check-low-value')->dailyAt('03:00');
 
-Schedule::command('production:check-low-value')->everyMinute();
+// Schedule::command('production:check-low-value')->everyMinute();

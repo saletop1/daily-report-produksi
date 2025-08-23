@@ -206,8 +206,8 @@ def run_scheduler():
     logger.info("Scheduler dimulai. Sinkronisasi akan berjalan pada jam terjadwal.")
 
     # PERUBAHAN: Format waktu diperbaiki dari "06.58" menjadi "06:58"
-    schedule.every().day.at("05:00").do(scheduled_sync)
-    schedule.every().day.at("18:00").do(scheduled_sync)
+    schedule.every().day.at("03:00").do(scheduled_sync)
+    # schedule.every().day.at("18:00").do(scheduled_sync)
 
     while True:
         next_run = schedule.next_run
