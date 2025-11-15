@@ -140,11 +140,53 @@
                 <h3 class="text-xl font-bold" id="modal-title">Detail Produksi</h3>
                 <button id="modal-close-btn" class="text-gray-400 hover:text-gray-800 text-2xl leading-none">&times;</button>
             </div>
-            <div class="p-6"><div id="modal-body" class="space-y-4"></div></div>
+            <div class="p-6">
+                <div id="modal-body" class="space-y-4">
+                    {{-- Konten modal akan diisi oleh JavaScript --}}
+                </div>
 
-            {{-- ==================== PERUBAHAN 1 ==================== --}}
+                {{-- ==================== TAMBAHAN: Quantity Sisa dan Value Sisa --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    {{-- Quantity Sisa --}}
+                    <div id="remaining-qty-section" class="p-4 bg-amber-50 rounded-lg border border-amber-200 hidden">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 font-medium">Quantity Sisa</p>
+                                <p id="remaining-qty-value" class="text-xl font-bold text-amber-700">0</p>
+                            </div>
+                            <i class="fa-solid fa-boxes-stacked text-amber-500 text-2xl"></i>
+                        </div>
+                        <p class="text-xs text-amber-600 mt-2">Total quantity yang belum diproses</p>
+                    </div>
+
+                    {{-- Value dari Quantity Sisa --}}
+                    <div id="remaining-value-section" class="p-4 bg-red-50 rounded-lg border border-red-200 hidden">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 font-medium">Value Quantity Sisa</p>
+                                <p id="remaining-value-amount" class="text-xl font-bold text-red-700">$ 0</p>
+                            </div>
+                            <i class="fa-solid fa-money-bill-wave text-red-500 text-2xl"></i>
+                        </div>
+                        <p class="text-xs text-red-600 mt-2">Nilai dari quantity yang belum diproses</p>
+                    </div>
+                </div>
+
+                {{-- Informasi Nilai Total PSMNG --}}
+                <div id="psmng-value-section" class="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200 hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 font-medium">Nilai Total QTY PRO</p>
+                            <p id="psmng-value-amount" class="text-xl font-bold text-purple-700">$ 0</p>
+                        </div>
+                        <i class="fa-solid fa-calculator text-purple-500 text-2xl"></i>
+                    </div>
+                    <p class="text-xs text-purple-600 mt-2">Value nilai dari QTY PRO</p>
+                </div>
+                {{-- ==================== AKHIR TAMBAHAN --}}
+            </div>
+
             {{-- Tombol kirim notifikasi hanya ditampilkan untuk user dengan role 'supervisor' --}}
-            {{-- Cek apakah role pengguna adalah 'supervisor' ATAU 'director' --}}
             @if(auth()->user() && in_array(strtolower(auth()->user()->role), ['supervisor', 'director']))
                 <div class="p-5 border-t bg-gray-50 rounded-b-2xl">
                     <button id="send-email-btn" class="w-full flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:bg-blue-300">
@@ -153,7 +195,6 @@
                     <p id="email-status" class="text-xs text-center mt-2 text-gray-500"></p>
                 </div>
             @endif
-            {{-- ==================== AKHIR PERUBAHAN 1 ==================== --}}
         </div>
     </div>
 
@@ -190,6 +231,12 @@
         const dayCells = document.querySelectorAll('.data-day');
         const sendEmailBtn = document.getElementById('send-email-btn');
         const emailStatus = document.getElementById('email-status');
+        const remainingQtySection = document.getElementById('remaining-qty-section');
+        const remainingQtyValue = document.getElementById('remaining-qty-value');
+        const remainingValueSection = document.getElementById('remaining-value-section');
+        const remainingValueAmount = document.getElementById('remaining-value-amount');
+        const psmngValueSection = document.getElementById('psmng-value-section');
+        const psmngValueAmount = document.getElementById('psmng-value-amount');
 
         const emailSelectionModal = document.getElementById('email-selection-modal');
         const emailModalPanel = document.getElementById('email-modal-panel');
@@ -220,14 +267,52 @@
             currentDateKey = dateKey;
             modalTitle.textContent = `Detail Produksi - ${date}`;
             const formatNumber = (num, decimals = 0) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(num || 0);
+            const formatCurrency = (num) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
+
+            // Hitung quantity sisa (PSMNG - WEMNG)
+            const psmng = details.psmng || 0;
+            const wemng = details.wemng || 0;
+            const remainingQty = psmng - wemng;
+
+            // Ambil nilai NETPR dari data
+            const netpr = details.netpr || 0;
+
+            // Hitung value dari quantity sisa menggunakan NETPR
+            const remainingValue = remainingQty * netpr;
+
+            // Hitung nilai total PSMNG (PSMNG × NETPR)
+            const psmngTotalValue = psmng * netpr;
 
             modalBody.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div class="bg-green-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Goods Receipt (GR)</p><p class="text-2xl font-bold text-green-700">${formatNumber(details.gr)}</p></div>
-                    <div class="bg-blue-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Value GR</p><p class="text-2xl font-bold text-blue-700">$ ${formatNumber(details['Total Value'], 2)}</p></div>
+                    <div class="bg-blue-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Value GR</p><p class="text-2xl font-bold text-blue-700">$ ${formatCurrency(details['Total Value'])}</p></div>
                     <div class="bg-gray-100 p-4 rounded-lg"><p class="text-gray-500 font-medium">Transfer to WHFG</p><p class="text-2xl font-bold text-gray-700">${formatNumber(details.whfg)}</p></div>
-                    <div class="bg-gray-100 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Transfer Value</p><p class="text-2xl font-bold text-gray-700">$ ${formatNumber(details['Sold Value'], 2)}</p></div>
+                    <div class="bg-gray-100 p-4 rounded-lg"><p class="text-gray-500 font-medium">Total Transfer Value</p><p class="text-2xl font-bold text-gray-700">$ ${formatCurrency(details['Sold Value'])}</p></div>
+                    <div class="bg-purple-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Sum QTY PRO</p><p class="text-2xl font-bold text-purple-700">${formatNumber(psmng)}</p></div>
+                    <div class="bg-orange-50 p-4 rounded-lg"><p class="text-gray-500 font-medium">Sum QTY (GR)</p><p class="text-2xl font-bold text-orange-700">${formatNumber(wemng)}</p></div>
                 </div>`;
+
+            // Tampilkan quantity sisa jika ada data
+            if (remainingQty > 0) {
+                remainingQtyValue.textContent = formatNumber(remainingQty);
+                remainingQtySection.classList.remove('hidden');
+
+                // Tampilkan value dari quantity sisa
+                remainingValueAmount.textContent = `$ ${formatCurrency(remainingValue)}`;
+                remainingValueSection.classList.remove('hidden');
+            } else {
+                remainingQtySection.classList.add('hidden');
+                remainingValueSection.classList.add('hidden');
+            }
+
+            // Tampilkan nilai total PSMNG jika ada data
+            if (psmngTotalValue > 0) {
+                psmngValueAmount.textContent = `$ ${formatCurrency(psmngTotalValue)}`;
+                psmngValueSection.classList.remove('hidden');
+            } else {
+                psmngValueSection.classList.add('hidden');
+            }
 
             // Hanya reset status jika elemennya ada
             if (emailStatus) {
@@ -261,12 +346,10 @@
             });
         });
 
-        {{-- ==================== PERUBAHAN 2 ==================== --}}
         // Tambahkan event listener hanya jika tombolnya ada (untuk supervisor)
         if (sendEmailBtn) {
             sendEmailBtn.addEventListener('click', openEmailSelectionModal);
         }
-        {{-- ==================== AKHIR PERUBAHAN 2 ==================== --}}
 
         confirmSendBtn.addEventListener('click', function() {
             const selectedEmails = Array.from(document.querySelectorAll('#recipient-list input:checked')).map(cb => cb.value);

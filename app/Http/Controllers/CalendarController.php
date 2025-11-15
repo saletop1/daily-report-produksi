@@ -166,8 +166,11 @@ class CalendarController extends Controller
             $carry['totalWhfg'] += $item['whfg'];
             $carry['totalValue'] += $item['Total Value'];
             $carry['totalSoldValue'] += $item['Sold Value'];
+            $carry['totalPsmng'] += $item['psmng'];
+            $carry['totalWemng'] += $item['wemng'];
+            $carry['totalNetpr'] += $item['netpr'];
             return $carry;
-        }, ['totalGr' => 0, 'totalWhfg' => 0, 'totalValue' => 0, 'totalSoldValue' => 0]);
+        }, ['totalGr' => 0, 'totalWhfg' => 0, 'totalValue' => 0, 'totalSoldValue' => 0, 'totalPsmng' => 0, 'totalWemng' => 0, 'totalNetpr' => 0]);
 
         return [$dailyData, $weeks, $totals];
     }
@@ -247,13 +250,11 @@ class CalendarController extends Controller
      */
     private function getDailyData(Carbon $startDate, Carbon $endDate, string $plant): array
     {
-        // === PERBAIKAN UTAMA DI SINI ===
-        // Menyesuaikan format tanggal agar cocok dengan format di database ('YYYY-MM-DD')
         $startDateFormatted = $startDate->format('Y-m-d');
         $endDateFormatted = $endDate->format('Y-m-d');
 
         $rawData = DB::table('sap_yppr009_data')
-            ->select('BUDAT_MKPF', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX')
+            ->select('BUDAT_MKPF', 'MENGEX', 'MENGE', 'VALUS', 'VALUSX', 'PSMNG', 'WEMNG', 'NETPR')
             ->where('WERKS', $plant)
             ->where('BUDAT_MKPF', '>=', $startDateFormatted)
             ->where('BUDAT_MKPF', '<=', $endDateFormatted)
@@ -261,17 +262,40 @@ class CalendarController extends Controller
 
         $data = [];
         foreach ($rawData as $item) {
-            // Karena formatnya sudah standar, kita bisa langsung parse tanpa validasi rumit
             $tanggal = Carbon::parse($item->BUDAT_MKPF)->toDateString();
 
             if (!isset($data[$tanggal])) {
-                $data[$tanggal] = ['gr' => 0, 'whfg' => 0, 'Total Value' => 0, 'Sold Value' => 0];
+                $data[$tanggal] = [
+                    'gr' => 0,
+                    'whfg' => 0,
+                    'Total Value' => 0,
+                    'Sold Value' => 0,
+                    'psmng' => 0,
+                    'wemng' => 0,
+                    'netpr' => 0,
+                    'netpr_count' => 0
+                ];
             }
             $data[$tanggal]['gr'] += floatval($item->MENGE ?? 0);
             $data[$tanggal]['whfg'] += floatval($item->MENGEX ?? 0);
             $data[$tanggal]['Total Value'] += floatval($item->VALUS ?? 0);
             $data[$tanggal]['Sold Value'] += floatval($item->VALUSX ?? 0);
+            $data[$tanggal]['psmng'] += floatval($item->PSMNG ?? 0);
+            $data[$tanggal]['wemng'] += floatval($item->WEMNG ?? 0);
+
+            if (!empty($item->NETPR)) {
+                $data[$tanggal]['netpr'] += floatval($item->NETPR ?? 0);
+                $data[$tanggal]['netpr_count'] += 1;
+            }
         }
+
+        foreach ($data as $tanggal => $values) {
+            if ($values['netpr_count'] > 0) {
+                $data[$tanggal]['netpr'] = $values['netpr'] / $values['netpr_count'];
+            }
+            unset($data[$tanggal]['netpr_count']);
+        }
+
         return $data;
     }
 
